@@ -16,6 +16,10 @@ database/*.mmdb
 # Logs
 service_logs/*.log
 
+# Generated reports (keep sample_* examples)
+reports/incidents/incident_*.html
+reports/honeypot/honeypot_report_*.html
+
 # IDE
 .vscode/
 .idea/
