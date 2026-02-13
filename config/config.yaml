@@ -1,5 +1,5 @@
 # ============================================================
-# Guardian SIEM v2.0 — Master Configuration
+# Guardian SIEM v2.0 - Master Configuration
 # ============================================================
 
 database:
@@ -59,3 +59,43 @@ log_ingestion:
       patterns:
         - "*.log"
         - "*.txt"
+
+syslog:
+  udp_enabled: true
+  tcp_enabled: true
+  bind_address: "0.0.0.0"
+  udp_port: 1514              # Use 1514 to avoid needing root/admin for 514
+  tcp_port: 1514
+  max_message_size: 8192
+
+active_response:
+  enabled: false               # ⚠️  Enable only when you understand the impact
+  dry_run: true                # When true, logs actions but doesn't modify firewall
+  auto_block: false            # Automatically block IPs (requires enabled + dry_run=false)
+  severity_threshold: "HIGH"   # Minimum severity to trigger a block
+  block_duration_minutes: 60
+  max_blocks_per_hour: 20
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+
+yara:
+  enabled: true
+  rules_directory: "config/yara_rules"
+  max_file_size_mb: 50
+  scan_on_ingest: false        # Scan files dropped into service_logs/
+
+sigma:
+  enabled: true
+  rules_directory: "config/sigma_rules"
+
+auth:
+  enabled: false               # Set to true to require login on dashboard
+  session_timeout_minutes: 480
+
+reports:
+  output_directory: "reports"
+  default_period_hours: 24

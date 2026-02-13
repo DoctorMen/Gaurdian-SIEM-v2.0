@@ -41,7 +41,7 @@ class LogIngestor:
 
     def _load_config(self, config_path):
         try:
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 self.config = yaml.safe_load(f) or {}
         except (FileNotFoundError, yaml.YAMLError) as e:
             print(f"[LogIngestor] Config error: {e}")

@@ -12,6 +12,15 @@ scapy>=2.5
 # GeoIP (optional — falls back to ip-api.com)
 geoip2>=4.7
 
+# PDF Reports (optional — falls back to HTML reports)
+# reportlab>=4.0
+
+# YARA scanning (optional)
+# yara-python>=4.3
+
+# Password hashing (optional — falls back to SHA-256)
+# bcrypt>=4.0
+
 # Windows Event Log (Windows only, optional)
 # pywin32>=306
 

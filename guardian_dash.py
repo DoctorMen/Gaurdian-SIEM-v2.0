@@ -3,10 +3,12 @@ Guardian SIEM v2.0 — Dashboard & API Server
 Full-featured Flask application with:
   - Real-time WebSocket event feed
   - REST API for events, stats, MITRE, GeoIP, rules, alerts, threat intel
+  - SIGMA + YARA integration, Active Response, Syslog, PDF Reports
+  - User authentication with role-based access control
   - Professional SOC dashboard UI
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_sock import Sock
 import sqlite3
 import os
@@ -23,6 +25,12 @@ from mitre_tagger import MitreTagger
 from threat_intel import ThreatIntel
 from geoip_lookup import GeoIPLookup
 from alert_manager import AlertManager
+from sigma_engine import SigmaEngine
+from yara_scanner import YaraScanner
+from active_response import ActiveResponse
+from report_generator import ReportGenerator
+from syslog_receiver import SyslogReceiver
+from auth import setup_auth
 
 # ---- App Setup ----
 app = Flask(__name__)
@@ -35,7 +43,7 @@ CONFIG_PATH = os.path.join(BASE_DIR, "config", "config.yaml")
 # Load config
 config = {}
 try:
-    with open(CONFIG_PATH, "r") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f) or {}
 except Exception:
     pass
@@ -49,6 +57,14 @@ mitre_tagger = MitreTagger()
 threat_intel = ThreatIntel()
 geoip = GeoIPLookup()
 alert_manager = AlertManager()
+sigma_engine = SigmaEngine()
+yara_scanner = YaraScanner()
+active_response = ActiveResponse()
+report_gen = ReportGenerator()
+syslog_receiver = SyslogReceiver()
+
+# Setup authentication (checks config for enabled/disabled)
+user_db = setup_auth(app, config)
 
 # WebSocket clients
 ws_clients = set()
@@ -63,7 +79,7 @@ def get_db_connection():
 
 # ---- Event Processing Pipeline ----
 def process_event(event):
-    """Pipeline: event → rules engine → MITRE enrichment → GeoIP → threat intel → alert."""
+    """Pipeline: event → rules engine → SIGMA → MITRE enrichment → GeoIP → active response → alert."""
     source = event.get("source", "")
     message = event.get("message", "")
 
@@ -71,8 +87,29 @@ def process_event(event):
     ip_match = re.search(r'\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b', message)
     src_ip = ip_match.group(1) if ip_match else ""
 
-    # Rules Engine evaluation
+    # Native Rules Engine evaluation
     matches = rules_engine.evaluate(source, message)
+
+    # SIGMA Rules evaluation
+    sigma_matches = sigma_engine.evaluate({
+        "source": source, "message": message,
+        "severity": event.get("severity", ""),
+    })
+    for sm in sigma_matches:
+        # Merge SIGMA matches into the same format
+        matches.append({
+            "rule_name": f"SIGMA: {sm['rule_name']}",
+            "description": sm.get("description", ""),
+            "severity": sm["severity"],
+            "mitre_id": sm.get("mitre_id", ""),
+            "mitre_tactic": sm.get("mitre_tactic", ""),
+            "hit_count": 1,
+            "threshold": 1,
+            "window_seconds": 0,
+            "matched_at": sm["matched_at"],
+            "source": source,
+            "message_excerpt": message[:200],
+        })
 
     for match in matches:
         # MITRE enrichment
@@ -105,6 +142,14 @@ def process_event(event):
 
         # Dispatch alert notification
         alert_manager.send_alert(match)
+
+        # Active response evaluation
+        active_response.respond({
+            "severity": match["severity"],
+            "src_ip": src_ip,
+            "rule_name": match["rule_name"],
+            "mitre_id": match.get("mitre_id", ""),
+        })
 
         # Push to WebSocket clients
         broadcast_ws({"type": "new_event", "event": alert_event})
@@ -251,22 +296,156 @@ def health():
         "modules": {
             "event_bus": "active",
             "rules_engine": f"{len(rules_engine.rules)} rules loaded",
+            "sigma_engine": f"{len(sigma_engine.rules)} SIGMA rules",
             "mitre_tagger": f"{len(mitre_tagger.techniques)} techniques",
             "threat_intel": "configured" if threat_intel.abuseipdb_key or threat_intel.virustotal_key else "no API keys",
             "geoip": "maxmind" if geoip.reader else "ip-api.com fallback",
+            "yara_scanner": yara_scanner.get_stats(),
+            "active_response": active_response.get_stats(),
+            "syslog_receiver": syslog_receiver.get_stats(),
             "alert_manager": "active",
+            "auth": "enabled" if app.config.get("AUTH_ENABLED") else "disabled",
         },
         "ws_clients": len(ws_clients),
     })
+
+
+# ---- REST API: SIGMA Rules ----
+@app.route('/api/sigma/rules')
+def get_sigma_rules():
+    return jsonify(sigma_engine.get_rules_summary())
+
+
+@app.route('/api/sigma/reload', methods=['POST'])
+def reload_sigma():
+    sigma_engine.reload_rules()
+    return jsonify({"status": "reloaded", "count": len(sigma_engine.rules)})
+
+
+# ---- REST API: YARA Scanner ----
+@app.route('/api/yara/stats')
+def get_yara_stats():
+    return jsonify(yara_scanner.get_stats())
+
+
+@app.route('/api/yara/results')
+def get_yara_results():
+    limit = request.args.get('limit', 50, type=int)
+    return jsonify(yara_scanner.get_recent_results(limit))
+
+
+@app.route('/api/yara/scan', methods=['POST'])
+def trigger_yara_scan():
+    data = request.get_json() or {}
+    directory = data.get("directory", os.path.join(BASE_DIR, "service_logs"))
+    extensions = data.get("extensions", None)
+    results = yara_scanner.scan_directory(directory, recursive=True, extensions=extensions)
+    return jsonify({"matches": len(results), "results": results})
+
+
+@app.route('/api/yara/reload', methods=['POST'])
+def reload_yara():
+    yara_scanner.reload_rules()
+    return jsonify({"status": "reloaded"})
+
+
+# ---- REST API: Active Response ----
+@app.route('/api/response/stats')
+def get_response_stats():
+    return jsonify(active_response.get_stats())
+
+
+@app.route('/api/response/blocked')
+def get_blocked_ips():
+    return jsonify(active_response.get_blocked_ips())
+
+
+@app.route('/api/response/log')
+def get_response_log():
+    limit = request.args.get('limit', 100, type=int)
+    return jsonify(active_response.get_action_log(limit))
+
+
+@app.route('/api/response/block', methods=['POST'])
+def manual_block():
+    data = request.get_json() or {}
+    ip = data.get("ip", "")
+    reason = data.get("reason", "Manual block via API")
+    if not ip:
+        return jsonify({"error": "ip required"}), 400
+    result = active_response.block_ip(ip, reason)
+    return jsonify(result)
+
+
+@app.route('/api/response/unblock', methods=['POST'])
+def manual_unblock():
+    data = request.get_json() or {}
+    ip = data.get("ip", "")
+    if not ip:
+        return jsonify({"error": "ip required"}), 400
+    result = active_response.unblock_ip(ip)
+    return jsonify(result)
+
+
+# ---- REST API: Reports ----
+@app.route('/api/reports')
+def list_reports():
+    return jsonify(report_gen.get_available_reports())
+
+
+@app.route('/api/reports/generate', methods=['POST'])
+def generate_report():
+    data = request.get_json() or {}
+    report_type = data.get("type", "daily")
+    hours = data.get("hours", 24)
+    path = report_gen.generate_report(report_type=report_type, hours=hours)
+    filename = os.path.basename(path)
+    return jsonify({"status": "generated", "filename": filename, "path": path})
+
+
+@app.route('/api/reports/download/<filename>')
+def download_report(filename):
+    return send_from_directory(report_gen.reports_dir, filename, as_attachment=True)
+
+
+# ---- REST API: Syslog Receiver ----
+@app.route('/api/syslog/stats')
+def get_syslog_stats():
+    return jsonify(syslog_receiver.get_stats())
 
 
 # ---- Main ----
 if __name__ == '__main__':
     host = config.get("dashboard", {}).get("host", "0.0.0.0")
     port = config.get("dashboard", {}).get("port", 5001)
+
+    # Start syslog receiver if configured
+    syslog_config = config.get("syslog", {})
+    if syslog_config.get("udp_enabled") or syslog_config.get("tcp_enabled"):
+        def syslog_callback(source, severity, raw_message, parsed):
+            enrichment = {
+                "src_ip": parsed.get("sender_ip", ""),
+                "raw_log": raw_message[:500],
+            }
+            event_bus.emit(source, severity, parsed.get("message", raw_message), enrichment=enrichment)
+
+        syslog_receiver.set_callback(syslog_callback)
+        syslog_receiver.start()
+
+    # Periodic cleanup of expired active response blocks
+    def cleanup_loop():
+        while True:
+            time.sleep(300)
+            active_response.cleanup_expired()
+
+    threading.Thread(target=cleanup_loop, daemon=True).start()
+
     print(f"\n🛡️  Guardian SIEM v2.0 Dashboard")
     print(f"   http://localhost:{port}")
     print(f"   API: http://localhost:{port}/api/health")
-    print(f"   Rules: {len(rules_engine.rules)} active")
-    print(f"   MITRE: {len(mitre_tagger.techniques)} techniques mapped\n")
+    print(f"   Rules: {len(rules_engine.rules)} native + {len(sigma_engine.rules)} SIGMA")
+    print(f"   MITRE: {len(mitre_tagger.techniques)} techniques mapped")
+    print(f"   YARA: {'active' if yara_scanner._compiled_rules else 'no rules compiled'}")
+    print(f"   Auth: {'enabled' if app.config.get('AUTH_ENABLED') else 'disabled'}")
+    print(f"   Syslog: UDP:{syslog_config.get('udp_port', 1514)} TCP:{syslog_config.get('tcp_port', 1514)}\n")
     app.run(host=host, port=port, debug=True)
