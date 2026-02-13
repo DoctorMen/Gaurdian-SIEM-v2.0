@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloud Honeypot Analysis Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #f5f5f5;
+            color: #212121;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
+            color: white;
+            padding: 40px;
+        }
+        .header h1 { font-size: 28px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 25px 40px;
+        }
+        .stat {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border-top: 4px solid #4caf50;
+        }
+        .stat .num {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1b5e20;
+        }
+        .stat .lbl { font-size: 13px; color: #666; }
+        .section {
+            padding: 25px 40px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .section h2 {
+            color: #1b5e20;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4caf50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+        tr:hover { background: #f5f5f5; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+        .footer {
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+        @media print {
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h1>Cloud Honeypot Analysis Report</h1>
+                    <p style="opacity:0.9;">Guardian SIEM — Threat Intelligence from Cloud Exposure</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:20px;font-weight:bold;">GUARDIAN SIEM</div>
+                    <div style="opacity:0.8;">Honeypot Intelligence</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="num">550</div>
+                <div class="lbl">Total Events</div>
+            </div>
+            <div class="stat">
+                <div class="num">190</div>
+                <div class="lbl">Unique Source IPs</div>
+            </div>
+            <div class="stat">
+                <div class="num" style="color:#ff6d00;">223</div>
+                <div class="lbl">Unauthorized Attempts</div>
+            </div>
+            <div class="stat">
+                <div class="num">87</div>
+                <div class="lbl">Known Scanners</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Top Source IPs</h2>
+            <table>
+                <tr><th>IP Address</th><th>Request Count</th></tr>
+                <tr><td><code>203.0.113.20</code></td><td>10</td></tr>
+<tr><td><code>198.51.100.57</code></td><td>10</td></tr>
+<tr><td><code>198.51.100.110</code></td><td>9</td></tr>
+<tr><td><code>198.51.100.159</code></td><td>9</td></tr>
+<tr><td><code>203.0.113.85</code></td><td>8</td></tr>
+<tr><td><code>192.0.2.115</code></td><td>8</td></tr>
+<tr><td><code>203.0.113.175</code></td><td>7</td></tr>
+<tr><td><code>203.0.113.43</code></td><td>7</td></tr>
+<tr><td><code>198.51.100.148</code></td><td>6</td></tr>
+<tr><td><code>203.0.113.88</code></td><td>6</td></tr>
+<tr><td><code>198.51.100.144</code></td><td>6</td></tr>
+<tr><td><code>198.51.100.74</code></td><td>6</td></tr>
+<tr><td><code>198.51.100.223</code></td><td>6</td></tr>
+<tr><td><code>198.51.100.228</code></td><td>6</td></tr>
+<tr><td><code>203.0.113.80</code></td><td>6</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Known Scanners Detected</h2>
+            <p style="color:#555;margin-bottom:10px;">These IPs are associated with
+            known internet scanning services.</p>
+            <table>
+                <tr><th>IP Address</th><th>Scanner</th><th>Organization</th><th>Requests</th></tr>
+                <tr><td><code>192.0.2.147</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>203.0.113.222</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>198.51.100.140</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>192.0.2.171</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>203.0.113.145</code></td><td>Shodan</td><td>Shodan.io</td><td>3</td></tr>
+<tr><td><code>192.0.2.168</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>5</td></tr>
+<tr><td><code>198.51.100.130</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>198.51.100.69</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>198.51.100.110</code></td><td>Shodan</td><td>Shodan.io</td><td>9</td></tr>
+<tr><td><code>203.0.113.181</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>198.51.100.8</code></td><td>Masscan</td><td>Unknown</td><td>4</td></tr>
+<tr><td><code>198.51.100.100</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>198.51.100.59</code></td><td>ZoomEye</td><td>Knownsec</td><td>4</td></tr>
+<tr><td><code>203.0.113.3</code></td><td>Shodan</td><td>Shodan.io</td><td>1</td></tr>
+<tr><td><code>192.0.2.151</code></td><td>ZoomEye</td><td>Knownsec</td><td>3</td></tr>
+<tr><td><code>192.0.2.90</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>203.0.113.186</code></td><td>Shodan</td><td>Shodan.io</td><td>1</td></tr>
+<tr><td><code>203.0.113.48</code></td><td>Masscan</td><td>Unknown</td><td>2</td></tr>
+<tr><td><code>203.0.113.128</code></td><td>Masscan</td><td>Unknown</td><td>1</td></tr>
+<tr><td><code>198.51.100.74</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>6</td></tr>
+<tr><td><code>198.51.100.109</code></td><td>ZoomEye</td><td>Knownsec</td><td>5</td></tr>
+<tr><td><code>198.51.100.202</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>203.0.113.43</code></td><td>ZoomEye</td><td>Knownsec</td><td>5</td></tr>
+<tr><td><code>198.51.100.219</code></td><td>Masscan</td><td>Unknown</td><td>6</td></tr>
+<tr><td><code>203.0.113.88</code></td><td>Censys</td><td>Censys Inc</td><td>5</td></tr>
+<tr><td><code>192.0.2.24</code></td><td>Masscan</td><td>Unknown</td><td>1</td></tr>
+<tr><td><code>198.51.100.135</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>203.0.113.80</code></td><td>Shodan</td><td>Shodan.io</td><td>5</td></tr>
+<tr><td><code>192.0.2.83</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>192.0.2.82</code></td><td>Censys</td><td>Censys Inc</td><td>1</td></tr>
+<tr><td><code>198.51.100.80</code></td><td>Censys</td><td>Censys Inc</td><td>1</td></tr>
+<tr><td><code>198.51.100.185</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>3</td></tr>
+<tr><td><code>203.0.113.204</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>4</td></tr>
+<tr><td><code>198.51.100.44</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>3</td></tr>
+<tr><td><code>198.51.100.188</code></td><td>ZoomEye</td><td>Knownsec</td><td>3</td></tr>
+<tr><td><code>192.0.2.72</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>203.0.113.173</code></td><td>Censys</td><td>Censys Inc</td><td>5</td></tr>
+<tr><td><code>198.51.100.133</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>198.51.100.184</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>6</td></tr>
+<tr><td><code>192.0.2.149</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>192.0.2.141</code></td><td>ZoomEye</td><td>Knownsec</td><td>3</td></tr>
+<tr><td><code>198.51.100.117</code></td><td>Masscan</td><td>Unknown</td><td>4</td></tr>
+<tr><td><code>198.51.100.121</code></td><td>Masscan</td><td>Unknown</td><td>1</td></tr>
+<tr><td><code>203.0.113.112</code></td><td>Masscan</td><td>Unknown</td><td>2</td></tr>
+<tr><td><code>192.0.2.115</code></td><td>Masscan</td><td>Unknown</td><td>8</td></tr>
+<tr><td><code>198.51.100.71</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>198.51.100.251</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>198.51.100.151</code></td><td>Censys</td><td>Censys Inc</td><td>1</td></tr>
+<tr><td><code>192.0.2.73</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>203.0.113.71</code></td><td>Censys</td><td>Censys Inc</td><td>1</td></tr>
+<tr><td><code>203.0.113.248</code></td><td>Masscan</td><td>Unknown</td><td>2</td></tr>
+<tr><td><code>198.51.100.243</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>203.0.113.37</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>192.0.2.41</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>1</td></tr>
+<tr><td><code>192.0.2.157</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>203.0.113.15</code></td><td>Shodan</td><td>Shodan.io</td><td>1</td></tr>
+<tr><td><code>203.0.113.20</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>10</td></tr>
+<tr><td><code>203.0.113.147</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>198.51.100.241</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>198.51.100.191</code></td><td>Censys</td><td>Censys Inc</td><td>2</td></tr>
+<tr><td><code>192.0.2.203</code></td><td>ZoomEye</td><td>Knownsec</td><td>4</td></tr>
+<tr><td><code>192.0.2.173</code></td><td>Shodan</td><td>Shodan.io</td><td>1</td></tr>
+<tr><td><code>192.0.2.14</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+<tr><td><code>203.0.113.26</code></td><td>Censys</td><td>Censys Inc</td><td>5</td></tr>
+<tr><td><code>203.0.113.81</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>192.0.2.84</code></td><td>Censys</td><td>Censys Inc</td><td>1</td></tr>
+<tr><td><code>198.51.100.60</code></td><td>Censys</td><td>Censys Inc</td><td>2</td></tr>
+<tr><td><code>198.51.100.156</code></td><td>Masscan</td><td>Unknown</td><td>2</td></tr>
+<tr><td><code>198.51.100.161</code></td><td>ZoomEye</td><td>Knownsec</td><td>6</td></tr>
+<tr><td><code>192.0.2.33</code></td><td>Masscan</td><td>Unknown</td><td>3</td></tr>
+<tr><td><code>192.0.2.42</code></td><td>Shodan</td><td>Shodan.io</td><td>5</td></tr>
+<tr><td><code>198.51.100.61</code></td><td>ZoomEye</td><td>Knownsec</td><td>3</td></tr>
+<tr><td><code>203.0.113.160</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>198.51.100.26</code></td><td>Censys</td><td>Censys Inc</td><td>2</td></tr>
+<tr><td><code>203.0.113.79</code></td><td>Masscan</td><td>Unknown</td><td>1</td></tr>
+<tr><td><code>192.0.2.144</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>203.0.113.87</code></td><td>Censys</td><td>Censys Inc</td><td>3</td></tr>
+<tr><td><code>203.0.113.82</code></td><td>Shodan</td><td>Shodan.io</td><td>3</td></tr>
+<tr><td><code>198.51.100.173</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>203.0.113.29</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>1</td></tr>
+<tr><td><code>198.51.100.174</code></td><td>Masscan</td><td>Unknown</td><td>4</td></tr>
+<tr><td><code>192.0.2.32</code></td><td>Shodan</td><td>Shodan.io</td><td>1</td></tr>
+<tr><td><code>192.0.2.179</code></td><td>ZoomEye</td><td>Knownsec</td><td>3</td></tr>
+<tr><td><code>192.0.2.104</code></td><td>Shodan</td><td>Shodan.io</td><td>2</td></tr>
+<tr><td><code>198.51.100.198</code></td><td>ZoomEye</td><td>Knownsec</td><td>1</td></tr>
+<tr><td><code>198.51.100.40</code></td><td>BinaryEdge</td><td>BinaryEdge</td><td>2</td></tr>
+<tr><td><code>203.0.113.45</code></td><td>ZoomEye</td><td>Knownsec</td><td>2</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Top API Actions</h2>
+            <table>
+                <tr><th>Action</th><th>Count</th></tr>
+                <tr><td>Microsoft.Storage/storageAccounts/blobServices/containers/read</td><td>45</td></tr>
+<tr><td>GetBucketPolicy</td><td>41</td></tr>
+<tr><td>GetBucketVersioning</td><td>41</td></tr>
+<tr><td>GetBucketAcl</td><td>40</td></tr>
+<tr><td>PutObject</td><td>39</td></tr>
+<tr><td>GetBucketLocation</td><td>38</td></tr>
+<tr><td>Microsoft.Storage/storageAccounts/listKeys/action</td><td>34</td></tr>
+<tr><td>HeadBucket</td><td>34</td></tr>
+<tr><td>ListBuckets</td><td>34</td></tr>
+<tr><td>ListObjects</td><td>31</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Unauthorized Access Attempts</h2>
+            <table>
+                <tr><th>Timestamp</th><th>Source IP</th><th>Action</th><th>Resource</th><th>Status</th></tr>
+                <tr><td>2026-02-12T15:10:56</td><td><code>203.0.113.107</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T15:20:56</td><td><code>203.0.113.20</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T15:58:56</td><td><code>198.51.100.4</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:00:56</td><td><code>203.0.113.175</code></td><td>Microsoft.Storage/storageAccounts/blobServices/containers/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:08:56</td><td><code>203.0.113.118</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:18:56</td><td><code>198.51.100.31</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:24:56</td><td><code>203.0.113.88</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:26:56</td><td><code>198.51.100.148</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:41:56</td><td><code>198.51.100.243</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T16:56:56</td><td><code>198.51.100.9</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T17:20:56</td><td><code>203.0.113.225</code></td><td>Microsoft.Storage/storageAccounts/listKeys/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T17:24:56</td><td><code>198.51.100.144</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T17:27:56</td><td><code>198.51.100.110</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T17:37:56</td><td><code>198.51.100.160</code></td><td>Microsoft.Storage/storageAccounts/listKeys/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T17:39:56</td><td><code>203.0.113.88</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T18:07:56</td><td><code>198.51.100.247</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T18:56:56</td><td><code>198.51.100.58</code></td><td>Microsoft.KeyVault/vaults/secrets/read</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T19:21:56</td><td><code>203.0.113.30</code></td><td>Microsoft.Storage/storageAccounts/listKeys/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T19:32:56</td><td><code>198.51.100.232</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+<tr><td>2026-02-12T19:42:56</td><td><code>198.51.100.178</code></td><td>Microsoft.Compute/virtualMachines/start/action</td><td>/subscriptions/00000000-0000-0000-0000-000000000000/resource</td><td style="color:#ff1744;">Failed</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>User Agents</h2>
+            <table>
+                <tr><th>User Agent</th><th>Count</th></tr>
+                <tr><td style="font-family:monospace;font-size:12px;">ZoomEye/1.0</td><td>40</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">curl/7.88.1</td><td>39</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">Shodan/3.0</td><td>35</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">Boto3/1.28.0</td><td>34</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">BinaryEdge/1.0</td><td>32</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">Mozilla/5.0 (compatible; bot)</td><td>32</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">AWS Security Scanner</td><td>29</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">Masscan/1.3</td><td>29</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">Go-http-client/1.1</td><td>28</td></tr>
+<tr><td style="font-family:monospace;font-size:12px;">python-requests/2.28.0</td><td>28</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Recommendations</h2>
+            <div style="background:#fff3e0;padding:15px;border-radius:8px;margin:10px 0;"><strong>[MEDIUM]</strong> 87 known internet scanners detected<br><span style="color:#555;">This is expected for internet-facing resources. Ensure security groups/firewalls only expose intended services.</span></div>
+<div style="background:#ffebee;padding:15px;border-radius:8px;margin:10px 0;"><strong>[HIGH]</strong> 223 unauthorized access attempts<br><span style="color:#555;">Enable AWS GuardDuty / Azure Defender / GCP Security Command Center. Review IAM policies for least privilege. Enable MFA for all accounts.</span></div>
+<div style="background:#fff3e0;padding:15px;border-radius:8px;margin:10px 0;"><strong>[MEDIUM]</strong> 190 unique IPs accessed resources<br><span style="color:#555;">Consider deploying a WAF or rate-limiting. Review if the resource should be publicly accessible.</span></div>
+<div style="background:#e8f5e9;padding:15px;border-radius:8px;margin:10px 0;"><strong>[INFO]</strong> Honeypot data collection complete<br><span style="color:#555;">Feed IOC IP addresses into threat intelligence blocklist. Share anonymized results with community via STIX/TAXII.</span></div>
+        </div>
+
+        <div class="footer">
+            <p>Guardian SIEM — Cloud Honeypot Intelligence Report</p>
+            <p>Generated 2026-02-13T14:47:56</p>
+        </div>
+    </div>
+</body>
+</html>

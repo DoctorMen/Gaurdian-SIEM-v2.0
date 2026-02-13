@@ -1,0 +1,31 @@
+title: Kerberoasting - RC4 Service Ticket Request
+id: 8b5e1e2f-3a4d-4c6e-9f8a-1b2c3d4e5f6a
+status: stable
+level: high
+description: >
+    Detects Kerberos service ticket (TGS) requests using RC4-HMAC encryption,
+    which is a strong indicator of Kerberoasting. Modern environments should
+    use AES256 - RC4 requests for service accounts are anomalous.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.credential_access
+    - attack.t1558.003
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+    - https://adsecurity.org/?p=2293
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID:
+            - 4769
+    keywords:
+        - "0x17"
+        - "RC4-HMAC"
+        - "Ticket Encryption"
+    condition: selection and keywords
+falsepositives:
+    - Legacy applications requiring RC4
+    - Service accounts with SPNs configured before AES migration

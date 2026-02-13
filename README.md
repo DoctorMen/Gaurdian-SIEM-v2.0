@@ -1,11 +1,14 @@
-# 🛡️ Guardian SIEM v2.1
+# 🛡️ Guardian SIEM v2.2
 
-**A full-featured Security Information and Event Management (SIEM) system built in Python.**
+**A full-featured Security Information and Event Management (SIEM) system built in Python — with integrated Purple Team lab, professional incident reporting, and cloud honeypot intelligence.**
 
 Guardian captures live network traffic, ingests logs from multiple sources (including syslog UDP/TCP), evaluates events against configurable detection rules (YAML + SIGMA + YARA), enriches alerts with MITRE ATT&CK mappings and GeoIP data, queries external threat intelligence APIs, supports automated active response, and presents everything through a professional real-time SOC dashboard with authentication and PDF report generation.
 
+**New in v2.2:** Purple Team attack simulator (11 MITRE techniques, 3 campaigns), professional incident report generator (Executive Summary / Technical Analysis / Remediation format), cloud honeypot log parser (AWS CloudTrail + Azure Activity), and [Architectural Decision Records](DESIGN.md).
+
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.x-green.svg)](https://flask.palletsprojects.com)
+[![Tests](https://img.shields.io/badge/Tests-176%20passing-brightgreen.svg)](#running-tests)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
 
@@ -41,9 +44,21 @@ Guardian captures live network traffic, ingests logs from multiple sources (incl
 |---------|-------------|
 | **Dashboard Authentication** | Session-based + API key auth with role-based access control (admin / analyst / viewer), bcrypt password hashing |
 | **PDF Report Generation** | Professional security reports via `reportlab` (PDF) with HTML fallback — executive summary, severity breakdown, top IPs, MITRE coverage, recent critical events |
+| **Incident Report Generator** | NIST SP 800-61 format incident reports with Executive Summary, Technical Analysis, Kill Chain visualization, IOC extraction, Impact Assessment, Remediation Plan, and Lessons Learned |
 | **Identity Verifier** | Windows Authenticode signature validation against trusted publisher lists |
 | **Docker Deployment** | Full `docker-compose` stack — dashboard, IPS, and log ingestor in separate containers |
-| **Unit Tests** | Comprehensive test suite (100+ tests) covering all core and advanced modules |
+| **Unit Tests** | Comprehensive test suite (176 tests) covering all core and advanced modules |
+
+### Purple Team Lab
+
+| Feature | Description |
+|---------|-------------|
+| **Attack Simulator** | 11 MITRE ATT&CK techniques with realistic Windows/network telemetry — Mimikatz, Kerberoasting, brute force, ransomware, lateral movement, exfiltration |
+| **Attack Campaigns** | 3 pre-built multi-stage campaigns: APT29 (Cozy Bear), human-operated Ransomware, and Insider Threat |
+| **Detection Coverage** | Automated coverage reporting — shows which techniques were detected and which are detection gaps |
+| **18 Detection Rules** | 10 YAML + 11 SIGMA rules covering credential access, lateral movement, defense evasion, persistence, exfiltration, and impact |
+| **Cloud Honeypot Parser** | Parse AWS CloudTrail + Azure Activity Logs to analyze bot scanning, unauthorized access, and known scanner fingerprints (Shodan, Censys, BinaryEdge) |
+| **Architectural Decisions** | [DESIGN.md](DESIGN.md) with 7 ADRs documenting every major engineering trade-off |
 
 ---
 
@@ -144,6 +159,66 @@ docker-compose up --build -d
 
 # View logs
 docker-compose logs -f
+```
+
+---
+
+## Purple Team Lab
+
+The Purple Team lab generates realistic attack telemetry through Guardian's full detection pipeline — validating that rules fire, alerts trigger, and reports capture forensic evidence.
+
+### Attack Simulator
+
+```bash
+# List all available techniques and campaigns
+python attack_simulator.py --list
+
+# Run a specific MITRE ATT&CK technique
+python attack_simulator.py --technique T1003     # Credential Dumping (Mimikatz)
+python attack_simulator.py --technique T1558.003 # Kerberoasting
+python attack_simulator.py --technique T1486     # Ransomware
+
+# Run a full attack campaign (multi-stage)
+python attack_simulator.py --campaign apt29       # APT29 kill chain (6 techniques)
+python attack_simulator.py --campaign ransomware  # Human-operated ransomware (6 techniques)
+python attack_simulator.py --campaign insider     # Insider threat (3 techniques)
+
+# Run all techniques and check detection coverage
+python attack_simulator.py --all
+python attack_simulator.py --coverage
+```
+
+**Techniques (11):** T1003 (Mimikatz), T1110 (Brute Force), T1059.001 (PowerShell), T1046 (Port Scan), T1070.001 (Log Clearing), T1543.003 (Service Persistence), T1041 (Exfiltration), T1059 (Reverse Shell), T1558.003 (Kerberoasting), T1021.001 (RDP Lateral Movement), T1486 (Ransomware).
+
+### Incident Reports
+
+```bash
+# Generate report from existing SIEM events
+python incident_report.py --hours 24
+
+# Simulate an attack and auto-generate the incident report
+python incident_report.py --campaign apt29
+python incident_report.py --campaign ransomware
+python incident_report.py --title "INC-2025-042 Ransomware"
+
+# Generate all sample reports for portfolio
+python generate_sample_reports.py
+```
+
+Reports include: Executive Summary, Kill Chain Visualization, MITRE ATT&CK Mapping, Event Timeline, IOC Extraction, Impact Assessment, Remediation Plan (Immediate / Short-term / Long-term), and Lessons Learned.
+
+### Cloud Honeypot
+
+```bash
+# Generate sample CloudTrail + Azure Activity logs (500+ events)
+python cloud_honeypot.py --generate-sample
+
+# Parse and analyze real cloud logs
+python cloud_honeypot.py --file path/to/cloudtrail.json --format aws
+python cloud_honeypot.py --analyze logs/honeypot/
+
+# Emit honeypot events into the SIEM pipeline
+python cloud_honeypot.py --generate-sample --emit --report
 ```
 
 ---
@@ -252,7 +327,7 @@ rules:
     enabled: true
 ```
 
-**Included rules:** Brute Force, Port Scan, Traffic Anomaly, Privilege Escalation, Log Tampering, Service Installation, Reverse Shell, Data Exfiltration, Unauthorized Access, Malware Signature.
+**Included rules:** Brute Force, Port Scan, Traffic Anomaly, Privilege Escalation, Log Tampering, Service Installation, Reverse Shell, Data Exfiltration, Unauthorized Access, Malware Signature, **Kerberoasting Detection**, **LSASS Credential Access**, **Ransomware File Encryption**, **Shadow Copy Deletion**, **RDP Lateral Movement**, **DNS Exfiltration**, **PowerShell Download Cradle**, **C2 Beacon Communication**.
 
 Rules support regex patterns, source filtering, threshold counts with sliding windows, and hot-reload without restart.
 
@@ -284,31 +359,40 @@ Results are cached locally in SQLite to respect rate limits.
 Guardian_SIEM/
 ├── config/
 │   ├── config.yaml              # Master configuration
-│   ├── alert_rules.yaml         # Detection rules (YAML)
+│   ├── alert_rules.yaml         # Detection rules (18 YAML rules)
 │   ├── mitre_mappings.yaml      # MITRE ATT&CK technique/tactic mappings
-│   ├── sigma_rules/             # SIGMA detection rules (.yml files)
+│   ├── sigma_rules/             # SIGMA detection rules (11 .yml files)
 │   └── yara_rules/              # YARA scanning rules (.yar files)
 ├── database/                    # SQLite databases (auto-created)
-├── reports/                     # Generated PDF/HTML reports
+├── reports/
+│   ├── incidents/               # Professional incident reports (HTML)
+│   └── honeypot/                # Cloud honeypot analysis reports (HTML)
+├── logs/
+│   └── honeypot/                # Cloud honeypot sample logs (JSON)
 ├── service_logs/                # Drop log files here for ingestion
 ├── static/
 │   ├── css/dashboard.css        # SOC dashboard dark theme
 │   └── js/dashboard.js          # Real-time event feed & charts
 ├── templates/
 │   └── dashboard.html           # Dashboard HTML template
-├── tests/
-│   ├── test_event_bus.py        # Event Bus unit tests
-│   ├── test_rules_engine.py     # Rules Engine unit tests
-│   ├── test_mitre_tagger.py     # MITRE Tagger unit tests
-│   ├── test_threat_intel.py     # Threat Intel unit tests
-│   ├── test_geoip.py            # GeoIP unit tests
-│   ├── test_alert_manager.py    # Alert Manager unit tests
-│   ├── test_sigma_engine.py     # SIGMA Engine unit tests
-│   ├── test_yara_scanner.py     # YARA Scanner unit tests
-│   ├── test_active_response.py  # Active Response unit tests
-│   ├── test_auth.py             # Authentication unit tests
-│   ├── test_report_generator.py # Report Generator unit tests
-│   └── test_syslog_receiver.py  # Syslog Receiver unit tests
+├── tests/                       # 176 unit tests across 15 test files
+│   ├── test_event_bus.py
+│   ├── test_rules_engine.py
+│   ├── test_sigma_engine.py
+│   ├── test_yara_scanner.py
+│   ├── test_mitre_tagger.py
+│   ├── test_threat_intel.py
+│   ├── test_geoip.py
+│   ├── test_alert_manager.py
+│   ├── test_active_response.py
+│   ├── test_auth.py
+│   ├── test_report_generator.py
+│   ├── test_syslog_receiver.py
+│   ├── test_attack_simulator.py  # NEW: Purple team simulator tests
+│   ├── test_incident_report.py   # NEW: Incident report tests
+│   └── test_cloud_honeypot.py    # NEW: Cloud honeypot parser tests
+│
+├── # ── Core SIEM Modules ──
 ├── event_bus.py                 # Central event pipeline (singleton)
 ├── guardian_dash.py             # Flask dashboard + WebSocket + REST API
 ├── passive_ips.py               # Scapy network monitor (IPS)
@@ -325,6 +409,14 @@ Guardian_SIEM/
 ├── report_generator.py          # PDF/HTML security report generation
 ├── syslog_receiver.py           # Syslog server (UDP + TCP)
 ├── identity_verifier.py         # Windows Authenticode checker
+│
+├── # ── Purple Team / Portfolio ──
+├── attack_simulator.py          # NEW: MITRE ATT&CK attack simulator (11 techniques, 3 campaigns)
+├── incident_report.py           # NEW: Professional incident report generator (NIST SP 800-61)
+├── cloud_honeypot.py            # NEW: Cloud honeypot log parser (AWS/Azure/GCP)
+├── generate_sample_reports.py   # NEW: Portfolio demo report generator
+├── DESIGN.md                    # NEW: 7 Architectural Decision Records
+│
 ├── Dockerfile                   # Container image definition
 ├── docker-compose.yml           # Multi-service orchestration
 ├── requirements.txt             # Python dependencies
@@ -381,13 +473,19 @@ All configuration lives in `config/config.yaml`. Key settings:
 
 ## SIGMA Rules
 
-SIGMA rules are loaded from `config/sigma_rules/`. Guardian ships with 5 built-in rules:
+SIGMA rules are loaded from `config/sigma_rules/`. Guardian ships with 11 built-in rules:
 
 - **Failed Logon Detection** — multiple failed Windows logon events (Event ID 4625)
 - **Suspicious PowerShell** — encoded commands, hidden windows, bypass flags
 - **Log Clearing** — Windows Security log cleared (Event ID 1102)
 - **Reverse Shell** — common reverse shell patterns (`/bin/sh`, `bash -i`, `nc -e`)
 - **Suspicious Service Install** — service installation via `sc create` or `New-Service`
+- **Kerberoasting (RC4 Tickets)** — Kerberos TGS-REP with RC4-HMAC encryption (Event ID 4769)
+- **LSASS Memory Access** — process accessing LSASS.exe for credential dumping (Sysmon Event 10)
+- **RDP Lateral Movement** — anomalous Type 10 logons indicating lateral movement
+- **Ransomware File Encryption** — rapid file renaming, ransom notes, shadow copy deletion
+- **DNS Exfiltration** — high-volume DNS queries to suspicious domains
+- **Encoded PowerShell** — Base64-encoded command execution
 
 Add your own `.yml` rules following the [SIGMA specification](https://sigmahq.io/) — Guardian supports field matching, keyword matching, wildcards, and modifiers (`contains`, `startswith`, `endswith`, `re`).
 
@@ -458,11 +556,15 @@ Supports session-based auth (browser) and API key auth (`X-API-Key` header) for 
 - [x] ~~User authentication for dashboard~~
 - [x] ~~PDF report generation~~
 - [x] ~~Syslog receiver (UDP/TCP)~~
+- [x] ~~Incident report generator (NIST SP 800-61 format)~~
+- [x] ~~Cloud log ingestion (AWS CloudTrail, Azure Activity Logs, GCP Audit Logs)~~
+- [x] ~~Purple team attack simulator (MITRE ATT&CK mapped)~~
+- [x] ~~Architectural Decision Records (DESIGN.md)~~
 - [ ] Elasticsearch backend option for large-scale deployments
 - [ ] Machine learning anomaly detection
 - [ ] Windows Event Forwarding (WEF) collector
-- [ ] Incident case management
-- [ ] Cloud log ingestion (AWS CloudTrail, Azure Activity Logs)
+- [ ] SOAR playbook automation
+- [ ] Kubernetes sidecar deployment mode
 
 ---
 

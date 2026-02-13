@@ -1,0 +1,31 @@
+title: Network Scanning - Rapid Port Enumeration
+id: 6e7f8091-2a3b-4c5d-6e7f-8091a2b3c4d5
+status: stable
+level: medium
+description: >
+    Detects rapid connection attempts across multiple ports and/or hosts,
+    characteristic of network scanning tools like Nmap, Masscan, or
+    custom port scanners. Distinguishes from legitimate health checks
+    by volume and diversity of target ports.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.discovery
+    - attack.t1046
+references:
+    - https://attack.mitre.org/techniques/T1046/
+logsource:
+    product: network
+    service: firewall
+detection:
+    selection:
+        - "SYN scan"
+        - "port scan"
+        - "connection attempt"
+        - "scanned"
+        - "ports across"
+    condition: selection
+falsepositives:
+    - Vulnerability scanners (Nessus, Qualys)
+    - Network monitoring tools
+    - Load balancer health checks

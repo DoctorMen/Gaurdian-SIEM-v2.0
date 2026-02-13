@@ -1,0 +1,26 @@
+title: Suspicious PowerShell Execution
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: experimental
+level: high
+description: Detects suspicious PowerShell commands often used in attacks.
+author: Guardian SIEM
+date: 2025/01/01
+tags:
+- attack.execution
+- attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    CommandLine|contains:
+    - -EncodedCommand
+    - '-enc '
+    - Invoke-Expression
+    - IEX(
+    - downloadstring
+    - Net.WebClient
+    - bypass
+  condition: selection
+falsepositives:
+- Legitimate admin scripts

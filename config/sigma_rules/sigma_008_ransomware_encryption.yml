@@ -1,0 +1,43 @@
+title: Ransomware File Encryption Activity
+id: 9e8d7c6b-5a4f-3e2d-1c0b-a9b8c7d6e5f4
+status: stable
+level: critical
+description: >
+    Detects patterns consistent with ransomware file encryption operations:
+    rapid file renaming with known ransomware extensions, ransom note creation,
+    and volume shadow copy deletion (prevents file recovery).
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.impact
+    - attack.t1486
+    - attack.t1490
+references:
+    - https://attack.mitre.org/techniques/T1486/
+    - https://attack.mitre.org/techniques/T1490/
+logsource:
+    product: windows
+    category: file_event
+detection:
+    selection_encryption:
+        - ".encrypted"
+        - ".locked"
+        - ".crypto"
+        - ".crypt"
+        - "rapid file modification"
+        - "files renamed"
+    selection_ransom_note:
+        - "README_DECRYPT"
+        - "RECOVER_FILES"
+        - "HOW_TO_DECRYPT"
+        - "ransom note"
+        - "Your files have been encrypted"
+    selection_shadow_delete:
+        - "vssadmin delete shadows"
+        - "wmic shadowcopy delete"
+        - "bcdedit /set"
+        - "Shadow Copy deleted"
+    condition: selection_encryption or selection_ransom_note or selection_shadow_delete
+falsepositives:
+    - Legitimate encryption software (BitLocker, VeraCrypt)
+    - Backup software deleting old shadow copies

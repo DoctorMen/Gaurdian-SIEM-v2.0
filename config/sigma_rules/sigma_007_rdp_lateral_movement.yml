@@ -1,0 +1,31 @@
+title: Lateral Movement via RDP - Anomalous Logon
+id: 2f4a6b8c-1d3e-5f70-92a4-b6c8d0e2f4a6
+status: stable
+level: high
+description: >
+    Detects Remote Desktop Protocol (RDP) logons (Logon Type 10) that may
+    indicate lateral movement. Correlates with anomalous behavior such as
+    first-time RDP from a source, rapid successive RDP sessions, or RDP
+    to Domain Controllers from workstations.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.lateral_movement
+    - attack.t1021.001
+references:
+    - https://attack.mitre.org/techniques/T1021/001/
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID:
+            - 4624
+    keywords:
+        - "Type 10"
+        - "RemoteInteractive"
+        - "RDP"
+    condition: selection and keywords
+falsepositives:
+    - Legitimate remote administration
+    - Help desk remote assistance sessions

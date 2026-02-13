@@ -126,3 +126,95 @@ rules:
     threshold: 1
     window_seconds: 1
     enabled: true
+
+  # ==================================================================
+  # Purple Team Rules - Attack Simulator Detection Coverage
+  # ==================================================================
+
+  - name: "Kerberoasting Detection"
+    description: "RC4-encrypted Kerberos TGS-REP tickets indicate Kerberoasting"
+    source: ".*"
+    pattern: "(4769.*RC4|4769.*0x17|Kerberos service ticket.*RC4-HMAC|Ticket Encryption.*0x17)"
+    severity: "HIGH"
+    mitre_id: "T1558.003"
+    mitre_tactic: "Credential Access"
+    threshold: 2
+    window_seconds: 30
+    enabled: true
+
+  - name: "LSASS Credential Access"
+    description: "Process accessing LSASS memory - possible credential dumping"
+    source: ".*"
+    pattern: "(lsass\\.exe.*PROCESS_VM_READ|ProcessAccess.*lsass|GrantedAccess.*0x1010|lsass\\.exe.*0x1FFFFF)"
+    severity: "CRITICAL"
+    mitre_id: "T1003"
+    mitre_tactic: "Credential Access"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "Ransomware File Encryption"
+    description: "Rapid file encryption or ransom note creation detected"
+    source: ".*"
+    pattern: "(rapid file modification|files renamed.*\\.encrypted|README_DECRYPT|RECOVER_FILES|Your files have been encrypted)"
+    severity: "CRITICAL"
+    mitre_id: "T1486"
+    mitre_tactic: "Impact"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "Shadow Copy Deletion"
+    description: "Volume shadow copies deleted - common ransomware precursor"
+    source: ".*"
+    pattern: "(vssadmin delete shadows|wmic shadowcopy delete|Shadow Copy deleted|bcdedit.*recoveryenabled.*no)"
+    severity: "CRITICAL"
+    mitre_id: "T1490"
+    mitre_tactic: "Impact"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "RDP Lateral Movement"
+    description: "Remote Desktop logon from internal host indicating lateral movement"
+    source: ".*"
+    pattern: "(4624.*Type 10|4624.*RemoteInteractive|RDP.*lateral|Second RDP session)"
+    severity: "HIGH"
+    mitre_id: "T1021.001"
+    mitre_tactic: "Lateral Movement"
+    threshold: 2
+    window_seconds: 300
+    enabled: true
+
+  - name: "DNS Exfiltration"
+    description: "High-volume DNS queries to suspicious domains indicating data exfiltration"
+    source: ".*"
+    pattern: "(DNS query volume anomaly|DNS exfiltration|subdomain pattern.*evil)"
+    severity: "HIGH"
+    mitre_id: "T1048.003"
+    mitre_tactic: "Exfiltration"
+    threshold: 1
+    window_seconds: 600
+    enabled: true
+
+  - name: "PowerShell Download Cradle"
+    description: "PowerShell downloading and executing remote payloads"
+    source: ".*"
+    pattern: "(downloadstring|Invoke-WebRequest.*-OutFile|Net\\.WebClient.*download|IEX.*New-Object)"
+    severity: "CRITICAL"
+    mitre_id: "T1059.001"
+    mitre_tactic: "Execution"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "C2 Beacon Communication"
+    description: "Outbound connection to known command and control infrastructure"
+    source: ".*"
+    pattern: "(known C2|C2 communication|beacon\\.exe|reverse shell pattern|AbuseIPDB)"
+    severity: "CRITICAL"
+    mitre_id: "T1071"
+    mitre_tactic: "Command and Control"
+    threshold: 1
+    window_seconds: 1
+    enabled: true

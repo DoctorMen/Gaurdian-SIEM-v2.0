@@ -1,0 +1,30 @@
+title: DNS Exfiltration - High Query Volume
+id: 4c3b2a1f-0e9d-8c7b-6a5f-4e3d2c1b0a9f
+status: stable
+level: high
+description: >
+    Detects potential DNS-based data exfiltration characterized by an unusually
+    high volume of DNS queries, long subdomain labels (used to encode data),
+    or queries to suspicious newly-registered domains.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.exfiltration
+    - attack.t1048.003
+    - attack.t1041
+references:
+    - https://attack.mitre.org/techniques/T1048/003/
+logsource:
+    product: network
+    service: dns
+detection:
+    selection:
+        - "DNS query volume anomaly"
+        - "DNS exfiltration"
+        - "subdomain pattern"
+        - "dns queries"
+    condition: selection
+falsepositives:
+    - High-volume DNS resolvers
+    - Content delivery networks with many subdomains
+    - Legitimate SaaS applications with dynamic DNS

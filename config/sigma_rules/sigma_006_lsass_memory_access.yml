@@ -1,0 +1,40 @@
+title: LSASS Memory Access - Credential Dumping
+id: 7b3f5e1a-9c2d-4a8b-b6e0-3d4c5a7f8e9b
+status: stable
+level: critical
+description: >
+    Detects process access to LSASS.exe (Local Security Authority Subsystem),
+    which is targeted by tools like Mimikatz to extract credentials from memory.
+    Sysmon Event ID 10 with GrantedAccess 0x1010 is a strong indicator.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.credential_access
+    - attack.t1003
+    - attack.t1003.001
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+    - https://www.ired.team/offensive-security/credential-access-and-credential-dumping/dump-credentials-from-lsass-process-without-mimikatz
+logsource:
+    product: windows
+    category: process_access
+detection:
+    selection:
+        EventID:
+            - 10
+    keywords:
+        - "lsass.exe"
+        - "LSASS"
+        - "PROCESS_VM_READ"
+        - "GrantedAccess"
+        - "0x1010"
+        - "0x1FFFFF"
+    filter_system:
+        - "csrss.exe"
+        - "services.exe"
+        - "svchost.exe"
+    condition: selection and keywords and not filter_system
+falsepositives:
+    - Windows Defender performing memory scans
+    - Legitimate AV products scanning process memory
+    - Windows Error Reporting (WerFault.exe)

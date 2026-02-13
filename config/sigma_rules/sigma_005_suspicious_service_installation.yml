@@ -1,0 +1,20 @@
+title: Suspicious Service Installation
+id: d4e5f6a7-b8c9-0123-defa-234567890123
+status: stable
+level: medium
+description: Detects installation of a new service which may indicate persistence.
+author: Guardian SIEM
+date: 2025/01/01
+tags:
+- attack.persistence
+- attack.t1543.003
+logsource:
+  product: windows
+  service: system
+detection:
+  selection:
+    EventID:
+    - 7045
+  condition: selection
+falsepositives:
+- Legitimate software installation

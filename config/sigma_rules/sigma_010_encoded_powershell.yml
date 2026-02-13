@@ -1,0 +1,38 @@
+title: Encoded PowerShell Command - Base64
+id: 5d6e7f80-1a2b-3c4d-5e6f-708192a3b4c5
+status: stable
+level: high
+description: >
+    Detects PowerShell execution with Base64-encoded commands, commonly used to
+    obfuscate malicious payloads. The -Enc, -EncodedCommand, and -e parameters
+    trigger decode-and-execute, making this a favorite attacker technique.
+author: Guardian SIEM
+date: 2025/02/13
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1059.001
+    - attack.t1027
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1027/
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        EventID:
+            - 1
+            - 4688
+    keywords:
+        - "powershell"
+        - "-Enc"
+        - "-NonI"
+        - "-W Hidden"
+        - "-NoP"
+        - "EncodedCommand"
+        - "FromBase64String"
+    condition: selection and keywords
+falsepositives:
+    - SCCM/Intune deployment scripts
+    - Configuration management tools encoding parameters
