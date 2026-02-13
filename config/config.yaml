@@ -1,0 +1,61 @@
+# ============================================================
+# Guardian SIEM v2.0 — Master Configuration
+# ============================================================
+
+database:
+  path: "database/guardian_events.db"
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5001
+  secret_key: "change-me-in-production"
+
+ips:
+  threshold: 100          # packets per window to trigger alert
+  window_seconds: 5       # sliding window size
+
+alerting:
+  enabled: true
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    sender: "guardian-siem@example.com"
+    password: ""           # Use env var GUARDIAN_SMTP_PASSWORD in production
+    recipients:
+      - "soc-team@example.com"
+  slack:
+    enabled: false
+    webhook_url: ""        # Use env var GUARDIAN_SLACK_WEBHOOK in production
+
+threat_intel:
+  abuseipdb:
+    enabled: false
+    api_key: ""            # Use env var ABUSEIPDB_API_KEY
+    cache_ttl_hours: 24
+  virustotal:
+    enabled: false
+    api_key: ""            # Use env var VIRUSTOTAL_API_KEY
+    cache_ttl_hours: 24
+
+geoip:
+  enabled: true
+  database_path: "database/GeoLite2-City.mmdb"   # Download from MaxMind
+
+log_ingestion:
+  watch_paths:
+    - "service_logs/"
+  poll_interval_seconds: 5
+  sources:
+    windows_event_log:
+      enabled: true
+      log_names: ["Security", "System", "Application"]
+      event_ids: [4625, 4624, 4672, 1102, 7045]   # Failed logon, success logon, special priv, log clear, service install
+    sysmon:
+      enabled: false
+      log_name: "Microsoft-Windows-Sysmon/Operational"
+    file_logs:
+      enabled: true
+      patterns:
+        - "*.log"
+        - "*.txt"

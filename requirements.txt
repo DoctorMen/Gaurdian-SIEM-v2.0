@@ -1,2 +1,19 @@
+# Guardian SIEM v2.0 — Dependencies
+
+# Core
 flask>=3.0
+flask-sock>=0.7.0
+pyyaml>=6.0
+requests>=2.31
+
+# Network monitoring
 scapy>=2.5
+
+# GeoIP (optional — falls back to ip-api.com)
+geoip2>=4.7
+
+# Windows Event Log (Windows only, optional)
+# pywin32>=306
+
+# Testing
+pytest>=7.0

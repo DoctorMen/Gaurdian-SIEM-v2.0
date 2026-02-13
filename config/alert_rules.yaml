@@ -1,0 +1,128 @@
+# ============================================================
+# Guardian SIEM v2.0 — Alert Rules Engine Configuration
+# ============================================================
+# Each rule defines a pattern to match against incoming events.
+# When matched, the rule triggers an alert with the specified severity.
+#
+# Fields:
+#   name          - Human-readable rule name
+#   description   - What the rule detects
+#   source        - Event source to match (regex supported)
+#   pattern       - Regex pattern to match against event message
+#   severity      - Alert severity: CRITICAL, HIGH, MEDIUM, LOW, INFO
+#   mitre_id      - MITRE ATT&CK technique ID
+#   mitre_tactic  - MITRE ATT&CK tactic
+#   threshold     - Number of matches in window before alerting (optional)
+#   window_seconds- Time window for threshold counting (optional)
+#   enabled       - Whether this rule is active
+
+rules:
+  - name: "Brute Force Detection"
+    description: "Multiple failed login attempts from the same source"
+    source: ".*"
+    pattern: "(failed login|authentication failure|4625|logon failure)"
+    severity: "HIGH"
+    mitre_id: "T1110"
+    mitre_tactic: "Credential Access"
+    threshold: 5
+    window_seconds: 60
+    enabled: true
+
+  - name: "Port Scan Detection"
+    description: "Rapid connection attempts across multiple ports"
+    source: "Network_IPS"
+    pattern: "(port scan|SYN scan|connection attempt)"
+    severity: "MEDIUM"
+    mitre_id: "T1046"
+    mitre_tactic: "Discovery"
+    threshold: 20
+    window_seconds: 10
+    enabled: true
+
+  - name: "High Traffic Anomaly"
+    description: "Unusually high packet rate from a single source"
+    source: "Network_IPS"
+    pattern: "(high traffic|flood|DDoS)"
+    severity: "HIGH"
+    mitre_id: "T1498"
+    mitre_tactic: "Impact"
+    threshold: 1
+    window_seconds: 5
+    enabled: true
+
+  - name: "Privilege Escalation"
+    description: "Special privileges assigned to a logon session"
+    source: ".*"
+    pattern: "(4672|special privilege|SeDebugPrivilege|SeTcbPrivilege)"
+    severity: "MEDIUM"
+    mitre_id: "T1078"
+    mitre_tactic: "Privilege Escalation"
+    threshold: 1
+    window_seconds: 300
+    enabled: true
+
+  - name: "Log Tampering"
+    description: "Security audit log was cleared"
+    source: ".*"
+    pattern: "(1102|audit log.*cleared|event log.*cleared)"
+    severity: "CRITICAL"
+    mitre_id: "T1070.001"
+    mitre_tactic: "Defense Evasion"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "Suspicious Service Installation"
+    description: "New service installed on the system"
+    source: ".*"
+    pattern: "(7045|new service|service.*installed)"
+    severity: "HIGH"
+    mitre_id: "T1543.003"
+    mitre_tactic: "Persistence"
+    threshold: 1
+    window_seconds: 60
+    enabled: true
+
+  - name: "Reverse Shell Indicator"
+    description: "Potential reverse shell connection detected"
+    source: ".*"
+    pattern: "(reverse shell|/bin/sh|cmd\\.exe.*socket|nc -e|ncat.*-e|powershell.*-enc)"
+    severity: "CRITICAL"
+    mitre_id: "T1059"
+    mitre_tactic: "Execution"
+    threshold: 1
+    window_seconds: 1
+    enabled: true
+
+  - name: "Data Exfiltration Indicator"
+    description: "Large outbound data transfer detected"
+    source: "Network_IPS"
+    pattern: "(exfiltration|large transfer|outbound.*MB)"
+    severity: "HIGH"
+    mitre_id: "T1041"
+    mitre_tactic: "Exfiltration"
+    threshold: 1
+    window_seconds: 300
+    enabled: true
+
+  - name: "Unauthorized Access Attempt"
+    description: "Access attempt to restricted resource"
+    source: ".*"
+    pattern: "(unauthorized|403|access denied|permission denied)"
+    severity: "MEDIUM"
+    mitre_id: "T1078"
+    mitre_tactic: "Initial Access"
+    threshold: 3
+    window_seconds: 60
+    enabled: true
+
+  - name: "Malware Signature Match"
+    description: "Known malware indicator detected"
+    source: ".*"
+    pattern: "(malware|trojan|ransomware|cryptominer|mimikatz|lazagne|bloodhound)"
+    severity: "CRITICAL"
+    mitre_id: "T1204"
+    mitre_tactic: "Execution"
+    threshold: 1
+    window_seconds: 1
+    enabled: true

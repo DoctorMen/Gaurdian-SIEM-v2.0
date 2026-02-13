@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  # ---- Guardian Dashboard & API ----
+  dashboard:
+    build: .
+    container_name: guardian-dashboard
+    ports:
+      - "5001:5001"
+    volumes:
+      - guardian-data:/app/database
+      - ./config:/app/config:ro
+      - ./service_logs:/app/service_logs
+    environment:
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY:-}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      - GUARDIAN_SMTP_PASSWORD=${GUARDIAN_SMTP_PASSWORD:-}
+      - GUARDIAN_SLACK_WEBHOOK=${GUARDIAN_SLACK_WEBHOOK:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---- Guardian IPS (Passive Network Monitor) ----
+  ips:
+    build: .
+    container_name: guardian-ips
+    command: python passive_ips.py
+    network_mode: host         # Required for raw packet capture
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    volumes:
+      - guardian-data:/app/database
+      - ./config:/app/config:ro
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+
+  # ---- Guardian Log Ingestor ----
+  ingestor:
+    build: .
+    container_name: guardian-ingestor
+    command: python log_ingestor.py
+    volumes:
+      - guardian-data:/app/database
+      - ./config:/app/config:ro
+      - ./service_logs:/app/service_logs
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+
+volumes:
+  guardian-data:
+    driver: local

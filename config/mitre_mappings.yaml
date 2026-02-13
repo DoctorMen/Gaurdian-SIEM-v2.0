@@ -1,0 +1,106 @@
+# ============================================================
+# Guardian SIEM v2.0 — MITRE ATT&CK Mappings
+# ============================================================
+# Reference: https://attack.mitre.org/techniques/enterprise/
+
+tactics:
+  TA0001:
+    name: "Initial Access"
+    description: "Techniques used to gain initial foothold"
+  TA0002:
+    name: "Execution"
+    description: "Techniques that result in adversary-controlled code running"
+  TA0003:
+    name: "Persistence"
+    description: "Techniques used to maintain access across restarts"
+  TA0004:
+    name: "Privilege Escalation"
+    description: "Techniques to gain higher-level permissions"
+  TA0005:
+    name: "Defense Evasion"
+    description: "Techniques to avoid detection"
+  TA0006:
+    name: "Credential Access"
+    description: "Techniques for stealing credentials"
+  TA0007:
+    name: "Discovery"
+    description: "Techniques to gain knowledge about the environment"
+  TA0008:
+    name: "Lateral Movement"
+    description: "Techniques to move through the environment"
+  TA0009:
+    name: "Collection"
+    description: "Techniques to gather data of interest"
+  TA0010:
+    name: "Exfiltration"
+    description: "Techniques to steal data from the network"
+  TA0011:
+    name: "Command and Control"
+    description: "Techniques to communicate with compromised systems"
+  TA0040:
+    name: "Impact"
+    description: "Techniques to disrupt availability or compromise integrity"
+
+techniques:
+  T1046:
+    name: "Network Service Discovery"
+    tactic: "Discovery"
+    tactic_id: "TA0007"
+    description: "Adversary attempts to get a listing of services running on hosts"
+    severity_weight: 3
+
+  T1059:
+    name: "Command and Scripting Interpreter"
+    tactic: "Execution"
+    tactic_id: "TA0002"
+    description: "Adversary abuses command and script interpreters to execute commands"
+    severity_weight: 8
+
+  T1070.001:
+    name: "Indicator Removal: Clear Windows Event Logs"
+    tactic: "Defense Evasion"
+    tactic_id: "TA0005"
+    description: "Adversary clears Windows Event Logs to remove evidence"
+    severity_weight: 9
+
+  T1078:
+    name: "Valid Accounts"
+    tactic: "Privilege Escalation"
+    tactic_id: "TA0004"
+    description: "Adversary uses legitimate credentials to gain access"
+    severity_weight: 6
+
+  T1110:
+    name: "Brute Force"
+    tactic: "Credential Access"
+    tactic_id: "TA0006"
+    description: "Adversary uses brute force techniques to gain access to accounts"
+    severity_weight: 7
+
+  T1204:
+    name: "User Execution"
+    tactic: "Execution"
+    tactic_id: "TA0002"
+    description: "Adversary relies on user execution of malicious content"
+    severity_weight: 8
+
+  T1498:
+    name: "Network Denial of Service"
+    tactic: "Impact"
+    tactic_id: "TA0040"
+    description: "Adversary performs network denial of service"
+    severity_weight: 7
+
+  T1041:
+    name: "Exfiltration Over C2 Channel"
+    tactic: "Exfiltration"
+    tactic_id: "TA0010"
+    description: "Adversary exfiltrates data over existing C2 channel"
+    severity_weight: 9
+
+  T1543.003:
+    name: "Create or Modify System Process: Windows Service"
+    tactic: "Persistence"
+    tactic_id: "TA0003"
+    description: "Adversary creates or modifies Windows services for persistence"
+    severity_weight: 7
