@@ -41,6 +41,7 @@ class YaraScanner:
         self._compiled_rules = None
         self._scan_results = []
         self._scan_lock = threading.Lock()
+        self._stats_lock = threading.Lock()
         self._stats = {
             "files_scanned": 0,
             "matches_found": 0,
@@ -119,7 +120,8 @@ class YaraScanner:
         results = []
         try:
             matches = self._compiled_rules.match(filepath, timeout=30)
-            self._stats["files_scanned"] += 1
+            with self._stats_lock:
+                self._stats["files_scanned"] += 1
 
             for match in matches:
                 # Extract metadata from YARA rule
@@ -142,14 +144,18 @@ class YaraScanner:
                     "scanned_at": datetime.now().isoformat(),
                 }
                 results.append(result)
-                self._stats["matches_found"] += 1
+                with self._stats_lock:
+                    self._stats["matches_found"] += 1
 
         except yara.TimeoutError:
-            self._stats["scan_errors"] += 1
+            with self._stats_lock:
+                self._stats["scan_errors"] += 1
         except yara.Error as e:
-            self._stats["scan_errors"] += 1
+            with self._stats_lock:
+                self._stats["scan_errors"] += 1
         except Exception as e:
-            self._stats["scan_errors"] += 1
+            with self._stats_lock:
+                self._stats["scan_errors"] += 1
 
         return results
 
@@ -241,7 +247,8 @@ class YaraScanner:
                 results = self.scan_file(filepath)
                 all_results.extend(results)
 
-        self._stats["last_scan"] = datetime.now().isoformat()
+        with self._stats_lock:
+            self._stats["last_scan"] = datetime.now().isoformat()
 
         with self._scan_lock:
             self._scan_results.extend(all_results)
@@ -255,8 +262,10 @@ class YaraScanner:
 
     def get_stats(self):
         """Return scanning statistics."""
+        with self._stats_lock:
+            stats_copy = dict(self._stats)
         return {
-            **self._stats,
+            **stats_copy,
             "yara_available": HAS_YARA,
             "rules_compiled": self._compiled_rules is not None,
             "rules_directory": self.rules_dir,

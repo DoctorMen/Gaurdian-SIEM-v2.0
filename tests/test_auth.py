@@ -26,9 +26,11 @@ class TestUserDB:
         assert users[0]["role"] == "admin"
 
     def test_authenticate_default_admin(self, user_db):
-        user = user_db.authenticate("admin", "guardian-admin")
+        # Default admin has a random password now, so create a known user instead
+        user_db.create_user("testadmin", "known-pass", "admin")
+        user = user_db.authenticate("testadmin", "known-pass")
         assert user is not None
-        assert user["username"] == "admin"
+        assert user["username"] == "testadmin"
         assert user["role"] == "admin"
 
     def test_authenticate_wrong_password(self, user_db):

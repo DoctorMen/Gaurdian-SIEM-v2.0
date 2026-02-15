@@ -16,6 +16,8 @@ import re
 import json
 import time
 import yaml
+import secrets
+import ipaddress
 import threading
 from datetime import datetime
 
@@ -48,7 +50,12 @@ try:
 except Exception:
     pass
 
-app.secret_key = config.get("dashboard", {}).get("secret_key", "guardian-dev-key")
+# Security: use env var, config value, or generate random key (never hardcoded)
+app.secret_key = (
+    os.environ.get("GUARDIAN_SECRET_KEY")
+    or config.get("dashboard", {}).get("secret_key", "")
+    or secrets.token_hex(32)
+)
 
 # ---- Initialize Modules ----
 event_bus = EventBus()
@@ -176,6 +183,12 @@ def broadcast_ws(data):
 
 @sock.route('/ws')
 def websocket(ws):
+    # Security: validate authentication before accepting WebSocket
+    if app.config.get("AUTH_ENABLED"):
+        from flask import session as ws_session
+        if not ws_session.get("authenticated"):
+            ws.close()
+            return
     with ws_lock:
         ws_clients.add(ws)
     try:
@@ -275,6 +288,11 @@ def get_alerts():
 # ---- REST API: Threat Intel Lookup ----
 @app.route('/api/threat/<ip>')
 def get_threat_intel(ip):
+    # Security: validate IP address before external API calls
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return jsonify({"error": "Invalid IP address"}), 400
     result = threat_intel.lookup_ip(ip)
     return jsonify(result)
 
@@ -282,6 +300,10 @@ def get_threat_intel(ip):
 # ---- REST API: GeoIP Lookup ----
 @app.route('/api/geoip/<ip>')
 def get_geoip(ip):
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return jsonify({"error": "Invalid IP address"}), 400
     result = geoip.lookup(ip)
     return jsonify(result)
 
@@ -339,6 +361,16 @@ def trigger_yara_scan():
     data = request.get_json() or {}
     directory = data.get("directory", os.path.join(BASE_DIR, "service_logs"))
     extensions = data.get("extensions", None)
+
+    # Security: prevent path traversal — restrict scanning to allowed directories
+    allowed_bases = [
+        os.path.realpath(os.path.join(BASE_DIR, "service_logs")),
+        os.path.realpath(os.path.join(BASE_DIR, "logs")),
+    ]
+    requested = os.path.realpath(directory)
+    if not any(requested.startswith(base) for base in allowed_bases):
+        return jsonify({"error": "Directory not allowed. Scanning restricted to service_logs/ and logs/"}), 403
+
     results = yara_scanner.scan_directory(directory, recursive=True, extensions=extensions)
     return jsonify({"matches": len(results), "results": results})
 
@@ -373,6 +405,11 @@ def manual_block():
     reason = data.get("reason", "Manual block via API")
     if not ip:
         return jsonify({"error": "ip required"}), 400
+    # Security: validate IP before passing to firewall
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return jsonify({"error": "Invalid IP address"}), 400
     result = active_response.block_ip(ip, reason)
     return jsonify(result)
 
@@ -448,4 +485,6 @@ if __name__ == '__main__':
     print(f"   YARA: {'active' if yara_scanner._compiled_rules else 'no rules compiled'}")
     print(f"   Auth: {'enabled' if app.config.get('AUTH_ENABLED') else 'disabled'}")
     print(f"   Syslog: UDP:{syslog_config.get('udp_port', 1514)} TCP:{syslog_config.get('tcp_port', 1514)}\n")
-    app.run(host=host, port=port, debug=True)
+    # Security: never enable debug in production (exposes Werkzeug interactive debugger)
+    debug = config.get("dashboard", {}).get("debug", False)
+    app.run(host=host, port=port, debug=debug)

@@ -64,7 +64,7 @@ class UserDB:
 
     def _create_default_admin(self, conn):
         """Create a default admin account on first run."""
-        password = "guardian-admin"  # Must be changed on first login
+        password = secrets.token_urlsafe(12)  # Random password each install
         pw_hash = self._hash_password(password)
         api_key = secrets.token_hex(32)
 
@@ -73,8 +73,8 @@ class UserDB:
             ("admin", pw_hash, "admin", api_key, datetime.now().isoformat())
         )
         conn.commit()
-        print(f"[Auth] Default admin created — username: admin  password: guardian-admin")
-        print(f"[Auth] ⚠️  CHANGE THE DEFAULT PASSWORD IMMEDIATELY")
+        print(f"[Auth] Default admin created — username: admin  password: {password}")
+        print(f"[Auth] ⚠️  SAVE THIS PASSWORD — it will not be shown again")
         print(f"[Auth] API Key: {api_key}")
 
     def authenticate(self, username, password):
@@ -150,9 +150,22 @@ class UserDB:
         conn.close()
         return [dict(r) for r in rows]
 
-    def delete_user(self, username):
-        """Delete a user account."""
+    def delete_user(self, username, requesting_user=None):
+        """Delete a user account with safety checks."""
+        # Prevent self-deletion
+        if requesting_user and requesting_user == username:
+            raise ValueError("Cannot delete your own account")
+        # Prevent deleting the last admin
         conn = sqlite3.connect(self.db_path)
+        admin_count = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE role = 'admin' AND enabled = 1"
+        ).fetchone()[0]
+        target_role = conn.execute(
+            "SELECT role FROM users WHERE username = ?", (username,)
+        ).fetchone()
+        if target_role and target_role[0] == "admin" and admin_count <= 1:
+            conn.close()
+            raise ValueError("Cannot delete the last admin account")
         conn.execute("DELETE FROM users WHERE username = ?", (username,))
         conn.commit()
         conn.close()
@@ -166,19 +179,30 @@ class UserDB:
 
     @staticmethod
     def _hash_password(password):
-        """Hash a password with bcrypt (or SHA-256 fallback)."""
+        """Hash a password with bcrypt (or PBKDF2 fallback)."""
         if HAS_BCRYPT:
             return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         else:
             salt = secrets.token_hex(16)
-            h = hashlib.sha256(f"{salt}:{password}".encode()).hexdigest()
-            return f"sha256:{salt}:{h}"
+            h = hashlib.pbkdf2_hmac(
+                "sha256", password.encode(), salt.encode(), 600_000
+            ).hex()
+            return f"pbkdf2:{salt}:{h}"
 
     @staticmethod
     def _verify_password(password, pw_hash):
         """Verify a password against its hash."""
         if HAS_BCRYPT and pw_hash.startswith("$2"):
             return bcrypt.checkpw(password.encode(), pw_hash.encode())
+        elif pw_hash.startswith("pbkdf2:"):
+            parts = pw_hash.split(":")
+            if len(parts) == 3:
+                salt, stored = parts[1], parts[2]
+                computed = hashlib.pbkdf2_hmac(
+                    "sha256", password.encode(), salt.encode(), 600_000
+                ).hex()
+                return hmac.compare_digest(computed, stored)
+        # Legacy sha256 support (read-only, will be re-hashed on password change)
         elif pw_hash.startswith("sha256:"):
             parts = pw_hash.split(":")
             if len(parts) == 3:
@@ -363,19 +387,37 @@ def setup_auth(app, config=None):
 
         return redirect(url_for("login"))
 
+    # Login rate limiting state
+    _login_attempts = {}  # ip -> (count, first_attempt_time)
+    _LOGIN_WINDOW = 300   # 5-minute window
+    _MAX_ATTEMPTS = 5     # max failures per window
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
         error = None
         if request.method == "POST":
+            ip = request.remote_addr or "unknown"
+            now = time.time()
+            # Rate limiting
+            attempts, first_time = _login_attempts.get(ip, (0, now))
+            if now - first_time > _LOGIN_WINDOW:
+                attempts, first_time = 0, now
+            if attempts >= _MAX_ATTEMPTS:
+                error = "Too many failed attempts. Try again in a few minutes."
+                return render_template_string(LOGIN_HTML, error=error), 429
+
             username = request.form.get("username", "")
             password = request.form.get("password", "")
             user = user_db.authenticate(username, password)
             if user:
+                _login_attempts.pop(ip, None)  # Reset on success
                 session["authenticated"] = True
                 session["username"] = user["username"]
                 session["role"] = user["role"]
                 session.permanent = True
                 return redirect("/")
+            # Track failed attempt
+            _login_attempts[ip] = (attempts + 1, first_time)
             error = "Invalid username or password"
         return render_template_string(LOGIN_HTML, error=error)
 

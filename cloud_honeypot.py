@@ -28,6 +28,7 @@ import random
 import argparse
 import hashlib
 from datetime import datetime, timedelta
+from html import escape as esc
 from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -459,28 +460,28 @@ class CloudHoneypotParser:
 
         # Top IPs table rows
         ip_rows = "\n".join(
-            f'<tr><td><code>{ip["ip"]}</code></td><td>{ip["count"]}</td></tr>'
+            f'<tr><td><code>{esc(str(ip["ip"]))}</code></td><td>{ip["count"]}</td></tr>'
             for ip in data["top_ips"][:15]
         )
 
         # Scanner rows
         scanner_rows = "\n".join(
-            f'<tr><td><code>{s["ip"]}</code></td><td>{s["scanner"]}</td>'
-            f'<td>{s["org"]}</td><td>{s["count"]}</td></tr>'
+            f'<tr><td><code>{esc(str(s["ip"]))}</code></td><td>{esc(str(s["scanner"]))}</td>'
+            f'<td>{esc(str(s["org"]))}</td><td>{s["count"]}</td></tr>'
             for s in data["scanners_detected"]
         ) or "<tr><td colspan='4'>No known scanners detected</td></tr>"
 
         # Top actions
         action_rows = "\n".join(
-            f'<tr><td>{a["action"]}</td><td>{a["count"]}</td></tr>'
+            f'<tr><td>{esc(str(a["action"]))}</td><td>{a["count"]}</td></tr>'
             for a in data["top_actions"][:10]
         )
 
         # Unauthorized access
         unauth_rows = "\n".join(
-            f'<tr><td>{u["timestamp"][:19]}</td><td><code>{u["source_ip"]}</code></td>'
-            f'<td>{u["action"]}</td><td>{u["resource"][:60]}</td>'
-            f'<td style="color:#ff1744;">{u["status"]}</td></tr>'
+            f'<tr><td>{esc(str(u["timestamp"][:19]))}</td><td><code>{esc(str(u["source_ip"]))}</code></td>'
+            f'<td>{esc(str(u["action"]))}</td><td>{esc(str(u["resource"][:60]))}</td>'
+            f'<td style="color:#ff1744;">{esc(str(u["status"]))}</td></tr>'
             for u in data["unauthorized_access"][:20]
         ) or "<tr><td colspan='5'>No unauthorized access attempts</td></tr>"
 
@@ -488,14 +489,14 @@ class CloudHoneypotParser:
         rec_html = "\n".join(
             f'<div style="background:{"#ffebee" if r["priority"]=="HIGH" else "#fff3e0" if r["priority"]=="MEDIUM" else "#e8f5e9"};'
             f'padding:15px;border-radius:8px;margin:10px 0;">'
-            f'<strong>[{r["priority"]}]</strong> {r["finding"]}<br>'
-            f'<span style="color:#555;">{r["recommendation"]}</span></div>'
+            f'<strong>[{esc(str(r["priority"]))}]</strong> {esc(str(r["finding"]))}<br>'
+            f'<span style="color:#555;">{esc(str(r["recommendation"]))}</span></div>'
             for r in data["recommendations"]
         )
 
         # User agent table
         ua_rows = "\n".join(
-            f'<tr><td style="font-family:monospace;font-size:12px;">{ua["user_agent"]}</td>'
+            f'<tr><td style="font-family:monospace;font-size:12px;">{esc(str(ua["user_agent"]))}</td>'
             f'<td>{ua["count"]}</td></tr>'
             for ua in data["user_agents"][:10]
         )

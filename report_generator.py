@@ -14,6 +14,7 @@ import os
 import io
 import yaml
 import sqlite3
+from html import escape as esc
 from datetime import datetime, timedelta
 from collections import Counter, defaultdict
 
@@ -470,21 +471,21 @@ class ReportGenerator:
         if data["top_sources"]:
             html += "<h2>Top Event Sources</h2><table><tr><th>Source</th><th>Count</th></tr>"
             for s in data["top_sources"]:
-                html += f"<tr><td>{s['source']}</td><td>{s['count']}</td></tr>"
+                html += f"<tr><td>{esc(str(s['source']))}</td><td>{s['count']}</td></tr>"
             html += "</table>"
 
         # Top IPs table
         if data["top_ips"]:
             html += "<h2>Top Threat IPs</h2><table><tr><th>IP</th><th>Events</th><th>Threat Score</th><th>Country</th></tr>"
             for ip in data["top_ips"][:10]:
-                html += f"<tr><td>{ip['ip']}</td><td>{ip['count']}</td><td>{ip.get('threat_score',0)}</td><td>{ip.get('country','')}</td></tr>"
+                html += f"<tr><td>{esc(str(ip['ip']))}</td><td>{ip['count']}</td><td>{ip.get('threat_score',0)}</td><td>{esc(str(ip.get('country','')))}</td></tr>"
             html += "</table>"
 
         # MITRE table
         if data["mitre_techniques"]:
             html += "<h2>MITRE ATT&CK Techniques</h2><table><tr><th>Technique</th><th>Tactic</th><th>Count</th></tr>"
             for m in data["mitre_techniques"]:
-                html += f"<tr><td>{m['technique']}</td><td>{m.get('tactic','')}</td><td>{m['count']}</td></tr>"
+                html += f"<tr><td>{esc(str(m['technique']))}</td><td>{esc(str(m.get('tactic','')))}</td><td>{m['count']}</td></tr>"
             html += "</table>"
 
         # Recent critical events
@@ -493,7 +494,7 @@ class ReportGenerator:
             for evt in data["recent_critical"][:15]:
                 ts = evt.get("timestamp", "")[:19].replace("T", " ")
                 sev_class = evt.get("severity", "").lower()
-                html += f"<tr><td>{ts}</td><td class='{sev_class}'>{evt.get('severity','')}</td><td>{evt.get('source','')}</td><td>{evt.get('message','')[:100]}</td></tr>"
+                html += f"<tr><td>{esc(ts)}</td><td class='{esc(sev_class)}'>{esc(str(evt.get('severity','')))}</td><td>{esc(str(evt.get('source','')))}</td><td>{esc(str(evt.get('message',''))[:100])}</td></tr>"
             html += "</table>"
 
         html += f"""

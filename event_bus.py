@@ -35,6 +35,7 @@ class EventBus:
             os.makedirs(db_dir)
         self.db_path = os.path.join(db_dir, "guardian_events.db")
         self._subscribers = []  # Callback functions for real-time processing
+        self._sub_lock = threading.Lock()  # Guards _subscribers list
         self._init_db()
         self._initialized = True
 
@@ -68,7 +69,8 @@ class EventBus:
 
     def subscribe(self, callback):
         """Register a callback to receive events in real-time."""
-        self._subscribers.append(callback)
+        with self._sub_lock:
+            self._subscribers.append(callback)
 
     def emit(self, source, severity, message, enrichment=None):
         """
@@ -104,7 +106,7 @@ class EventBus:
         }
 
         # Persist to database
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=10)
         conn.execute(
             """INSERT INTO events 
             (timestamp, source, severity, message, rule_matched, mitre_id, mitre_tactic,
@@ -118,8 +120,10 @@ class EventBus:
         conn.commit()
         conn.close()
 
-        # Notify all subscribers
-        for callback in self._subscribers:
+        # Notify all subscribers (snapshot to avoid holding lock during callbacks)
+        with self._sub_lock:
+            subs = list(self._subscribers)
+        for callback in subs:
             try:
                 callback(event)
             except Exception as e:
