@@ -12,6 +12,7 @@ services:
       - ./config:/app/config:ro
       - ./service_logs:/app/service_logs
     environment:
+      - GUARDIAN_SECRET_KEY=${GUARDIAN_SECRET_KEY:-}
       - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY:-}
       - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
       - GUARDIAN_SMTP_PASSWORD=${GUARDIAN_SMTP_PASSWORD:-}
@@ -48,6 +49,21 @@ services:
       - guardian-data:/app/database
       - ./config:/app/config:ro
       - ./service_logs:/app/service_logs
+    depends_on:
+      - dashboard
+    restart: unless-stopped
+
+  # ---- Guardian Syslog Receiver ----
+  syslog:
+    build: .
+    container_name: guardian-syslog
+    command: python syslog_receiver.py
+    ports:
+      - "1514:1514/udp"
+      - "1514:1514/tcp"
+    volumes:
+      - guardian-data:/app/database
+      - ./config:/app/config:ro
     depends_on:
       - dashboard
     restart: unless-stopped

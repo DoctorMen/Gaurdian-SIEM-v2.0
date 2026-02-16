@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 LABEL maintainer="DoctorMen"
-LABEL description="Guardian SIEM v2.0 — Security Information and Event Management"
+LABEL description="Guardian SIEM v2.2 — Security Information and Event Management"
 
 WORKDIR /app
 
@@ -19,7 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create required directories
-RUN mkdir -p database service_logs
+RUN mkdir -p database service_logs logs reports
+
+# Non-root user for security
+RUN useradd -r -s /bin/false guardian && chown -R guardian:guardian /app
+USER guardian
 
 # Expose dashboard port
 EXPOSE 5001

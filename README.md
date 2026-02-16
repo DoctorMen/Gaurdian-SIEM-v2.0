@@ -7,8 +7,10 @@ Guardian captures live network traffic, ingests logs from multiple sources (incl
 **New in v2.2:** Purple Team attack simulator (11 MITRE techniques, 3 campaigns), professional incident report generator (Executive Summary / Technical Analysis / Remediation format), cloud honeypot log parser (AWS CloudTrail + Azure Activity), and [Architectural Decision Records](DESIGN.md).
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
+[![CI](https://github.com/DoctorMen/Guardian-SIEM-v2.0/actions/workflows/ci.yml/badge.svg)](https://github.com/DoctorMen/Guardian-SIEM-v2.0/actions/workflows/ci.yml)
 [![Flask](https://img.shields.io/badge/Flask-3.x-green.svg)](https://flask.palletsprojects.com)
 [![Tests](https://img.shields.io/badge/Tests-176%20passing-brightgreen.svg)](#running-tests)
+[![Security](https://img.shields.io/badge/Security-14%20vulns%20fixed-blueviolet.svg)](SECURITY.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
 
@@ -124,8 +126,8 @@ Guardian captures live network traffic, ingests logs from multiple sources (incl
 
 ```bash
 # Clone the repository
-git clone https://github.com/DoctorMen/Gaurdian-SIEM-v2.0.git
-cd Gaurdian-SIEM-v2.0
+git clone https://github.com/DoctorMen/Guardian-SIEM-v2.0.git
+cd Guardian-SIEM-v2.0
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -540,11 +542,21 @@ auth:
 
 **Roles:** `admin` (full access), `analyst` (read + scan), `viewer` (read-only)
 
-A default admin account is created on first run:
-- **Username:** `guardian-admin`
-- **Password:** `guardian-admin` (change immediately!)
+A default admin account is created on first run with a **random password** printed to the console:
+```
+[Auth] Default admin created — username: admin  password: <random>
+[Auth] ⚠️  SAVE THIS PASSWORD — it will not be shown again
+```
 
 Supports session-based auth (browser) and API key auth (`X-API-Key` header) for programmatic access.
+
+---
+
+## Security Audit
+
+A comprehensive security audit identified and fixed **14 vulnerabilities** (2 Critical, 5 High, 5 Medium, 2 Low) including command injection, path traversal, stored XSS, hardcoded credentials, race conditions, and more.
+
+Full details with CWE references, before/after code samples, and deployment best practices: **[SECURITY.md](SECURITY.md)**
 
 ---
 
@@ -560,6 +572,8 @@ Supports session-based auth (browser) and API key auth (`X-API-Key` header) for 
 - [x] ~~Cloud log ingestion (AWS CloudTrail, Azure Activity Logs, GCP Audit Logs)~~
 - [x] ~~Purple team attack simulator (MITRE ATT&CK mapped)~~
 - [x] ~~Architectural Decision Records (DESIGN.md)~~
+- [x] ~~Security audit & hardening — 14 vulnerabilities fixed ([SECURITY.md](SECURITY.md))~~
+- [x] ~~GitHub Actions CI/CD pipeline~~
 - [ ] Elasticsearch backend option for large-scale deployments
 - [ ] Machine learning anomaly detection
 - [ ] Windows Event Forwarding (WEF) collector
